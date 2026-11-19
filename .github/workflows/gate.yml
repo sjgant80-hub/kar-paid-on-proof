@@ -1,0 +1,70 @@
+name: gate
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: compile (Shanghai) + tests + local end-to-end flow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci --no-audit --no-fund
+      - name: compile with solc 0.8.24 for Shanghai and refuse Cancun opcodes
+        run: node tools/compile.mjs
+      - name: artifacts match the sources (no drift)
+        run: git diff --exit-code artifacts/
+      - name: tests
+        run: node --test --test-concurrency=1 "test/*.test.mjs"
+      - name: the whole spine end to end on the local EVM
+        run: node flow.mjs --network local
+      - name: the page carries the gated kernels byte for byte
+        run: node tools/page-parity.mjs
+      - name: the in-browser EVM bundle is built from these exact sources
+        run: node tools/build-evm.mjs && git diff --exit-code app/evm.js
+
+  mutation:
+    name: mutation gate (${{ matrix.file }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        file:
+          - sdk/verify.mjs
+          - sdk/reader.mjs
+          - sdk/policy.mjs
+          - sdk/cost.mjs
+          - contracts/FulfilmentGate.sol
+          - contracts/AgentAccount.sol
+          - contracts/AgentIdentityRegistry.sol
+          - contracts/ValidationRegistry.sol
+          - contracts/Fallmarket.sol
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci --no-audit --no-fund
+      - name: witness, pinned
+        run: git clone --depth 1 --branch v0.7 https://github.com/sjgant80-hub/witness.git .witness
+      - name: witness + Solidity operators + fuzz must be CLEAN
+        run: node tools/mutation-gate.mjs --only ${{ matrix.file }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-receipt-${{ strategy.job-index }}
+          path: receipts/
+
+  docker:
+    name: docker image builds and runs the spine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t kar-trust-layer .
+      - run: docker run --rm kar-trust-layer

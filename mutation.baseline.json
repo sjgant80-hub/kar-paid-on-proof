@@ -1,0 +1,4 @@
+{
+ "about": "Reviewed equivalent mutants: a mutation no test can tell apart from the original because the behaviour is identical. Each needs a written reason. Empty means every mutant must be killed.",
+ "solidity": []
+}

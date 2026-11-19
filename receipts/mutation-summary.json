@@ -1,0 +1,5 @@
+{
+ "text": "Last gate receipts: cost.mjs 6/6 · policy.mjs 14/14 · reader.mjs 9/9 · verify.mjs 49/49 mutants killed; every kernel never throws under fuzz; CLEAN.",
+ "clean": true,
+ "generated": "2026-11-19T02:04:47.545Z"
+}

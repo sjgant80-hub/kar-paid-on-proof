@@ -1,0 +1,31 @@
+{
+ "gate": "kar-trust-layer mutation gate",
+ "started": "2026-11-19T01:52:13.343Z",
+ "witness": "witness",
+ "files": [
+  {
+   "file": "sdk/reader.mjs",
+   "tests": [
+    "test/kernels.test.mjs"
+   ],
+   "witness": {
+    "total": 9,
+    "killed": 9,
+    "survived": [],
+    "ignored": [],
+    "score": 1,
+    "clean": true
+   },
+   "fuzz": {
+    "readAnswer": true,
+    "sentences": true
+   }
+  }
+ ],
+ "finished": "2026-11-19T01:53:44.890Z",
+ "clean": true,
+ "baselineReasons": {
+  "about": "Reviewed equivalent mutants: a mutation no test can tell apart from the original because the behaviour is identical. Each needs a written reason. Empty means every mutant must be killed.",
+  "solidity": []
+ }
+}

@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kar Trust Layer</title>
+<meta name="description" content="Settlement that waits for proof: an AI agent with an ERC-8004 identity pays tUSD8 on QDay Aevum testnet only for work a verifier and the chain both checked, and never pays an attacker.">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#f7f7f4;--panel:#ffffff;--ink:#1b1d1f;--muted:#5d6268;--line:#dcdcd5;--accent:#0f6b5c;--accent-ink:#ffffff;--ok:#1d7a3a;--ok-bg:#e6f4ea;--bad:#a1281e;--bad-bg:#fbe9e7;--warn:#8a5a00;--warn-bg:#fff4dc;--code:#f0f0ea;--mark:#fff1a8;--shadow:0 1px 2px rgba(0,0,0,.06)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121416;--panel:#1b1e21;--ink:#e8e9ea;--muted:#a3a8ae;--line:#2e3337;--accent:#4fc1a7;--accent-ink:#0b1412;--ok:#6fd38d;--ok-bg:#16301f;--bad:#ff8a7a;--bad-bg:#3a1a16;--warn:#f2c060;--warn-bg:#33270e;--code:#23272b;--mark:#5a4f12;--shadow:none}}
+:root[data-theme="dark"]{--bg:#121416;--panel:#1b1e21;--ink:#e8e9ea;--muted:#a3a8ae;--line:#2e3337;--accent:#4fc1a7;--accent-ink:#0b1412;--ok:#6fd38d;--ok-bg:#16301f;--bad:#ff8a7a;--bad-bg:#3a1a16;--warn:#f2c060;--warn-bg:#33270e;--code:#23272b;--mark:#5a4f12;--shadow:none}
+*{box-sizing:border-box}html{overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--accent)}code,pre,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+code{background:var(--code);padding:.1em .35em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code);padding:12px 14px;border-radius:8px;overflow-x:auto;margin:.6em 0}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+header.top{background:var(--panel);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:16px;align-items:center;justify-content:space-between;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.2px}.brand small{font-weight:400;color:var(--muted);margin-left:6px}
+nav.toc{display:flex;gap:12px;flex-wrap:wrap;font-size:.92em}nav.toc a{text-decoration:none;color:var(--muted)}nav.toc a:hover{color:var(--accent)}
+.theme{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer}
+.hero{padding:36px 0 18px}.hero h1{font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.15;margin:0 0 10px}
+.hero p.lead{font-size:1.12rem;max-width:760px;color:var(--ink);margin:0 0 12px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:.85em}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}
+section{padding:26px 0;border-top:1px solid var(--line)}section h2{font-size:1.45rem;margin:0 0 6px}section h3{margin:18px 0 6px;font-size:1.1rem}
+.sub{color:var(--muted);margin:0 0 14px;max-width:800px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin-top:0}
+.kpi{font-size:1.6rem;font-weight:700}.kpi small{font-size:.8rem;font-weight:400;color:var(--muted);display:block}
+ol.steps{padding-left:1.2em}ol.steps li{margin:4px 0}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;font-size:.95em}
+.btn.ghost{background:transparent;color:var(--accent)}.btn:disabled{opacity:.55;cursor:wait}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.78em;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.tl{list-style:none;padding:0;margin:0}
+.tl li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.tl .st{font-weight:700;color:var(--muted);font-size:.85em;padding-top:2px}
+.tl .what{min-width:0;overflow-wrap:anywhere}.tl .meta{color:var(--muted);font-size:.85em;overflow-wrap:anywhere}
+.tl li.refused .what>b{color:var(--bad)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93em}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;white-space:nowrap}
+textarea,input,select{width:100%;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;min-height:72px}
+label{font-size:.88em;color:var(--muted);display:block;margin:8px 0 3px}
+.verdict{border-radius:8px;padding:10px 12px;margin-top:10px;font-weight:600}
+.verdict.PASS{background:var(--ok-bg);color:var(--ok)}.verdict.FAIL,.verdict.REFUSE{background:var(--bad-bg);color:var(--bad)}
+.src{white-space:pre-wrap;background:var(--code);border-radius:8px;padding:10px;font-size:.82em;max-height:220px;overflow:auto}
+mark{background:var(--mark);color:inherit;border-radius:3px}
+.log{background:var(--code);border-radius:8px;padding:10px;font-size:.8em;max-height:300px;overflow:auto;white-space:pre-wrap}
+.note{border-left:3px solid var(--warn);background:var(--warn-bg);padding:8px 12px;border-radius:0 8px 8px 0;margin:10px 0}
+.limits{border-left:3px solid var(--bad);background:var(--bad-bg);padding:10px 14px;border-radius:0 8px 8px 0}
+svg text{fill:var(--ink);font:12px system-ui,sans-serif}svg .muted{fill:var(--muted)}svg .box{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+svg .edge{stroke:var(--accent);stroke-width:2;fill:none}svg .edge.bad{stroke:var(--bad);stroke-dasharray:5 4}svg .lbl{font-size:11px}svg .big{font-weight:700;font-size:13px}
+footer{padding:26px 0 40px;color:var(--muted);font-size:.9em;border-top:1px solid var(--line)}
+@media (max-width:640px){.tl li{grid-template-columns:40px 1fr}.hero{padding-top:24px}nav.toc{display:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">Kar Trust Layer <small>settlement that waits for proof</small></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#start">Start here</a><a href="#run">The run</a><a href="#try">Try it</a><a href="#how">How it works</a><a href="#blueprint">Blueprint</a><a href="#business">For your business</a><a href="#paper">White paper</a><a href="#docs">Docs</a>
+  </nav>
+  <button class="theme" id="theme" type="button" aria-label="Switch light or dark theme">Theme</button>
+</div></header>
+
+<main class="wrap">
+<div class="hero">
+  <h1>An AI agent should pay only for checked work, and never pay an attacker.</h1>
+  <p class="lead">Kar Trust Layer is settlement for agent commerce on <b>QDay Aevum testnet</b>. An agent with an <b>ERC-8004</b> identity takes a job from <b>Fallmarket</b> through a <b>session key</b> it cannot exceed. A worker delivers an answer copied from the job's sources. The <b>DocDec verifier</b> signs off, and the <b>FulfilmentGate</b> releases <b>tUSD8</b> only after the chain re-checks every quoted word. A prompt injection that tells the agent to pay someone else is refused by the chain, even when the agent obeys it.</p>
+  <div class="badges" id="badges"><span class="badge"><span class="dot warn"></span>loading the run…</span></div>
+</div>
+
+<section id="start">
+  <h2>Start here</h2>
+  <p class="sub">Four ways in, from one click to the whole repository.</p>
+  <div class="grid g2">
+    <div class="card"><h3>1 · Watch the real run</h3><p>Every step below is a transaction, with its hash and, on Aevum, a link to the explorer. The four red steps are attacks and mistakes that the chain <b>refused</b>.</p><a class="btn ghost" href="#run">Go to the run</a></div>
+    <div class="card"><h3>2 · Run it in your browser</h3><p>The same contracts, the same bytecode and the same flow, on an EVM inside this page. No wallet, no keys, nothing leaves your machine.</p><a class="btn ghost" href="#browser">Run it here</a></div>
+    <div class="card"><h3>3 · Try to break the verifier</h3><p>Change one word of the paid answer, or point a citation at the wrong bytes, and watch the verdict flip from PASS to FAIL.</p><a class="btn ghost" href="#try">Try it</a></div>
+    <div class="card"><h3>4 · Run it yourself</h3><pre>git clone https://github.com/sjgant80-hub/kar-trust-layer
+cd kar-trust-layer && npm ci
+node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum with your test keys: <a href="#docs">docs</a>.</p></div>
+  </div>
+</section>
+
+<section id="run">
+  <h2>The run</h2>
+  <p class="sub" id="runsub">Loading…</p>
+  <div class="grid g3" id="kpis"></div>
+  <h3>Step by step</h3>
+  <ul class="tl" id="timeline"></ul>
+  <h3>How it ended</h3>
+  <div class="grid g2">
+    <div class="card scroll"><table id="final"></table></div>
+    <div class="card"><b>Checks the conductor made during the run</b><ul id="checks" style="padding-left:1.1em;margin:.4em 0 0"></ul></div>
+  </div>
+  <h3>The contracts</h3>
+  <div class="card scroll"><table id="contracts"></table></div>
+</section>
+
+<section id="browser">
+  <h2>Run it in your browser</h2>
+  <p class="sub">This loads an in-browser Shanghai EVM (the reference JavaScript implementation, ethereumjs), deploys the six contracts from the exact bytecode in <code>artifacts/</code>, and runs the same <code>lib/flow.mjs</code> that ran on Aevum. It takes a few seconds.</p>
+  <div class="btns"><button class="btn" id="runBtn" type="button">Run the whole flow here</button></div>
+  <div class="log" id="runLog" aria-live="polite">Press the button. Each line is a transaction on the in-page chain.</div>
+  <p id="runResult"></p>
+</section>
+
+<section id="try">
+  <h2>Try it: the verifier and the wall</h2>
+  <p class="sub">These run the same verifier, reader and spending-wall code the build is gated on, inlined into this page byte for byte (CI checks it).</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>The DocDec verifier</h3>
+      <div class="btns">
+        <button class="btn ghost" type="button" data-preset="paid">The paid answer</button>
+        <button class="btn ghost" type="button" data-preset="reworded">The reworded answer</button>
+        <button class="btn ghost" type="button" data-preset="offq">Verbatim but off-question</button>
+        <button class="btn ghost" type="button" data-preset="refuse">A refusal</button>
+      </div>
+      <label for="vq">Question</label><input id="vq">
+      <label for="va">Answer (the worker may only copy)</label><textarea id="va"></textarea>
+      <label for="vc">Claims: source index and byte range [start, end)</label><textarea id="vc"></textarea>
+      <div class="btns"><button class="btn ghost" type="button" id="readerBtn">Let the copy-only reader answer this question</button></div>
+      <div class="verdict" id="vout">…</div>
+      <div id="vwhy" class="meta"></div>
+    </div>
+    <div class="card">
+      <h3>The sources, with the cited bytes marked</h3>
+      <p class="meta">Three verbatim excerpts of the ERC-8004 spec (CC0). Their hashes are committed on-chain when the job opens.</p>
+      <div id="srcs"></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h3>The spending wall</h3>
+      <p class="meta">The session key as granted in the run: cap 2.00 tUSD8, 24 hours, may pay only the FulfilmentGate. Type what an injected agent might sign.</p>
+      <label for="wt">Pay to</label>
+      <select id="wt"><option value="gate">the FulfilmentGate (allowed)</option><option value="bad">0xBAD000…BaD0 (the injection's address)</option><option value="token">the tUSD8 token contract itself</option></select>
+      <label for="wa">Amount (tUSD8)</label><input id="wa" type="number" min="0" step="0.01" value="10000">
+      <label for="ws">Already spent by this key (tUSD8)</label><input id="ws" type="number" min="0" step="0.01" value="1">
+      <label><input type="checkbox" id="wr" style="width:auto"> the owner has revoked the key</label>
+      <div class="verdict" id="wout">…</div>
+    </div>
+    <div class="card">
+      <h3>The immune screen</h3>
+      <p class="meta">A tripwire on untrusted text (listings, deliverables, email). It is not the wall: the run deliberately signs the injected payment anyway, to prove the chain refuses it.</p>
+      <label for="it">Untrusted text</label><textarea id="it"></textarea>
+      <div class="verdict" id="iout">…</div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <h2>How it works</h2>
+  <p class="sub">The diagram is filled in from the run above: the amounts and the transaction hashes are that run's.</p>
+  <div class="card scroll">
+  <svg viewBox="0 0 980 470" width="100%" role="img" aria-labelledby="dgT dgD" style="min-width:720px">
+    <title id="dgT">How a job is paid</title><desc id="dgD">The agent's session key signs; the smart account enforces the wall; the gate escrows; the worker delivers; the DocDec verifier signs in the ERC-8004 Validation Registry; the gate re-checks the quote and pays the worker; the attacker is refused.</desc>
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--accent)"/></marker><marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--bad)"/></marker></defs>
+    <rect class="box" x="20" y="30" width="190" height="78" rx="10"/><text x="34" y="56" class="big">Kar buyer agent</text><text x="34" y="76" class="muted">ERC-8004 identity #<tspan id="d-buyer">1</tspan></text><text x="34" y="94" class="muted">holds only a session key</text>
+    <rect class="box" x="290" y="30" width="210" height="78" rx="10"/><text x="304" y="56" class="big">AgentAccount (the wall)</text><text x="304" y="76" class="muted">cap <tspan id="d-cap">2.00</tspan> tUSD8 · 24 h</text><text x="304" y="94" class="muted">allowlist: the gate only</text>
+    <rect class="box" x="590" y="30" width="200" height="78" rx="10"/><text x="604" y="56" class="big">FulfilmentGate</text><text x="604" y="76" class="muted">escrow per job</text><text x="604" y="94" class="muted">pays only on proof</text>
+    <rect class="box" x="590" y="190" width="200" height="78" rx="10"/><text x="604" y="216" class="big">Fallmarket listing</text><text x="604" y="236" class="muted">price <tspan id="d-price">1.00</tspan> tUSD8</text><text x="604" y="254" class="muted">validator: DocDec</text>
+    <rect class="box" x="290" y="190" width="210" height="78" rx="10"/><text x="304" y="216" class="big">Worker agent #<tspan id="d-worker">2</tspan></text><text x="304" y="236" class="muted">copies a passage +</text><text x="304" y="254" class="muted">its byte offsets</text>
+    <rect class="box" x="20" y="190" width="190" height="78" rx="10"/><text x="34" y="216" class="big">DocDec verifier #<tspan id="d-val">3</tspan></text><text x="34" y="236" class="muted">verbatim + on-question</text><text x="34" y="254" class="muted">signs PASS / FAIL</text>
+    <rect class="box" x="20" y="350" width="190" height="78" rx="10"/><text x="34" y="376" class="big">Validation Registry</text><text x="34" y="396" class="muted">ERC-8004, on-chain</text><text x="34" y="414" class="muted">response 0..100</text>
+    <rect class="box" x="590" y="350" width="200" height="78" rx="10"/><text x="604" y="376" class="big">Worker's agentWallet</text><text x="604" y="396" class="muted">paid <tspan id="d-paid">1.00</tspan> tUSD8</text><text x="604" y="414" class="muted mono" id="d-reltx">tx …</text>
+    <rect class="box" x="840" y="30" width="125" height="78" rx="10" style="stroke:var(--bad)"/><text x="852" y="56" class="big" style="fill:var(--bad)">0xBAD…</text><text x="852" y="76" class="muted">asked: 10,000</text><text x="852" y="94" class="muted">got: <tspan id="d-att">0.00</tspan></text>
+    <path class="edge" d="M210,69 L288,69" marker-end="url(#ar)"/><text x="218" y="62" class="lbl">signs</text>
+    <path class="edge" d="M500,69 L588,69" marker-end="url(#ar)"/><text x="506" y="62" class="lbl">escrow <tspan id="d-esc">1.00</tspan></text>
+    <path class="edge bad" d="M395,30 C395,4 900,4 902,28" marker-end="url(#arb)"/><text x="560" y="14" class="lbl" style="fill:var(--bad)">injected payment: REFUSED on-chain (RecipientNotAllowed, OverCap)</text>
+    <path class="edge" d="M690,190 L690,110" marker-end="url(#ar)"/><text x="696" y="160" class="lbl">job terms</text>
+    <path class="edge" d="M500,229 L588,229" marker-end="url(#ar)"/><text x="508" y="222" class="lbl">submit</text>
+    <path class="edge" d="M290,229 L212,229" marker-end="url(#ar)"/><text x="220" y="222" class="lbl">request</text>
+    <path class="edge" d="M115,268 L115,348" marker-end="url(#ar)"/><text x="122" y="314" class="lbl">signs <tspan id="d-v1">100</tspan>/100</text>
+    <path class="edge" d="M210,389 C420,389 600,300 650,112" marker-end="url(#ar)"/><text x="330" y="352" class="lbl">gate reads the verdict</text>
+    <path class="edge" d="M720,110 C800,180 800,300 720,348" marker-end="url(#ar)"/><text x="796" y="230" class="lbl">re-check quote,</text><text x="796" y="244" class="lbl">then release</text>
+  </svg>
+  </div>
+  <ol class="steps">
+    <li><b>Identity.</b> Three agents register in the ERC-8004 Identity Registry. The buyer agent's <code>agentWallet</code> is bound to its smart account by an ERC-1271 signature, so the gate knows which account speaks for that identity.</li>
+    <li><b>The wall.</b> The account's owner grants a session key: a spend cap, an expiry and a recipient allowlist, written into the account. The agent holds only this key. It signs typed actions, and anyone may relay them.</li>
+    <li><b>The job.</b> A worker agent lists a job on Fallmarket with a price and the validator that must sign off. The agent takes it: the account approves exactly the price and the gate escrows it, together with the hash of the question and of every source document.</li>
+    <li><b>The attack.</b> The listing's terms carry a prompt injection. The run assumes the worst, that the model obeyed: the session key signs "pay 0xBAD… 10,000". The account refuses (<code>RecipientNotAllowed</code>). Routed through the one allowed recipient, the cap refuses it (<code>OverCap</code>).</li>
+    <li><b>The work.</b> The worker's copy-only reader picks the sentence that best covers the question and copies it, with its byte offsets. It cannot write a word that is not in a source.</li>
+    <li><b>The verdict.</b> The DocDec verifier checks that the answer is exactly the cited bytes and that it addresses the question, then signs 100 (PASS) or 0 (FAIL) for that exact deliverable in the ERC-8004 Validation Registry.</li>
+    <li><b>Settlement.</b> <code>release</code> pays only if the job's own validator signed PASS for the job's own worker, and the chain re-runs the verbatim check: sources hash to the committed root, answer equals the cited bytes. A FAIL refunds the buyer. Anyone can prune a listing whose worker's verified record falls under 60/100.</li>
+  </ol>
+</section>
+
+<section id="organism">
+  <h2>The organism</h2>
+  <p class="sub">Each part of the pitch is a real file in this repository, gated by tests and the mutation gate.</p>
+  <div class="card scroll"><table>
+    <tr><th>Part</th><th>Is</th><th>Where</th></tr>
+    <tr><td>Body</td><td>Fallmarket: the job market</td><td><code>contracts/Fallmarket.sol</code></td></tr>
+    <tr><td>Identity</td><td>ERC-8004 agent identities and wallets</td><td><code>contracts/AgentIdentityRegistry.sol</code></td></tr>
+    <tr><td>Settlement</td><td>QDay contracts: escrow, release on proof, refund</td><td><code>contracts/FulfilmentGate.sol</code>, <code>contracts/AgentAccount.sol</code></td></tr>
+    <tr><td>Verifier</td><td>DocDec's verbatim + on-question rule, signed into ERC-8004 validation</td><td><code>sdk/verify.mjs</code>, <code>contracts/ValidationRegistry.sol</code></td></tr>
+    <tr><td>Workers</td><td>verified worker minds; here, a copy-only reader</td><td><code>sdk/reader.mjs</code></td></tr>
+    <tr><td>Conductor</td><td>Kar runs the job end to end and writes the audit trail</td><td><code>lib/flow.mjs</code></td></tr>
+    <tr><td>Immune system</td><td>the injection screen and the on-chain wall</td><td><code>sdk/policy.mjs</code>, <code>AgentAccount.sol</code></td></tr>
+    <tr><td>Metabolism</td><td>the market prunes expired listings and failing workers, permissionlessly</td><td><code>Fallmarket.prune</code></td></tr>
+    <tr><td>Proof discipline</td><td>claims sealed before the run; mutation-tested; CI on every push</td><td><code>CLAIMS.md</code>, <code>tools/mutation-gate.mjs</code></td></tr>
+    <tr><td>Liveware</td><td>judges run the whole thing in their browser</td><td><a href="#browser">this page</a></td></tr>
+  </table></div>
+</section>
+
+<section id="blueprint">
+  <h2>Blueprint</h2>
+  <p class="sub">How it is built, organ by organ. Every organ has its own test file and its own mutation run in CI.</p>
+  <div class="card scroll"><table>
+    <tr><th>Organ</th><th>File</th><th>What it guarantees</th><th>Tests</th></tr>
+    <tr><td>Identity</td><td><code>AgentIdentityRegistry.sol</code></td><td>ERC-721 identity; URI and metadata only by owner, operator or approved; the payment wallet bound by EIP-712 (EOA) or ERC-1271 (contract); the wallet is cleared on transfer</td><td><code>test/identity.test.mjs</code></td></tr>
+    <tr><td>Validation</td><td><code>ValidationRegistry.sol</code></td><td>only the agent's owner asks; a request hash is claimed once; only the named validator answers, 0..100</td><td><code>test/validation.test.mjs</code></td></tr>
+    <tr><td>Market</td><td><code>Fallmarket.sol</code></td><td>listings by the worker's owner; prune when expired, or with ≥ 2 verdicts from the listing's validator averaging &lt; 60</td><td><code>test/validation.test.mjs</code></td></tr>
+    <tr><td>Wall</td><td><code>AgentAccount.sol</code></td><td>session keys: signature, active, expiry, deadline, allowlist, cap, in that order; one key one session; never a call to the token itself</td><td><code>test/account.test.mjs</code></td></tr>
+    <tr><td>Gate</td><td><code>FulfilmentGate.sol</code></td><td>escrow from the buyer's agentWallet only; release needs the job's validator's PASS for the job's worker AND the on-chain verbatim re-check; refund on FAIL or after the deadline</td><td><code>test/gate.test.mjs</code></td></tr>
+    <tr><td>Verifier</td><td><code>sdk/verify.mjs</code></td><td>pure; never throws; the verbatim half is the same rule the gate re-runs</td><td><code>test/kernels.test.mjs</code></td></tr>
+    <tr><td>Reader</td><td><code>sdk/reader.mjs</code></td><td>copy-only; deterministic; refuses when nothing matches</td><td><code>test/kernels.test.mjs</code></td></tr>
+    <tr><td>Policy</td><td><code>sdk/policy.mjs</code></td><td>predicts the wall's verdict; flags injected payment text</td><td><code>test/kernels.test.mjs</code>, run checks</td></tr>
+    <tr><td>Conductor</td><td><code>lib/flow.mjs</code></td><td>the spine on any chain; every refusal must be the expected one</td><td><code>test/flow.test.mjs</code></td></tr>
+  </table></div>
+  <p class="meta">Mutation gate: <a href="https://github.com/sjgant80-hub/witness">witness</a> (pinned v0.7) flips operators in every file and runs that file's tests; a Solidity pass adds the operators witness does not flip; every kernel is fuzzed with hostile input. A surviving mutant fails CI. <span id="gateNote"></span></p>
+</section>
+
+<section id="business">
+  <h2>For your business</h2>
+  <p class="sub">What it does for a firm whose AI agents buy work from other agents, and how to roll it out. Supplied by <a href="https://www.ai-nativesolutions.com">AI Native Solutions</a>.</p>
+  <div class="grid g3">
+    <div class="card"><h3>CEO</h3><p>Your agents can buy work without a person approving each payment, and without a new way to lose money. Every payment is tied to a checked deliverable and a public record.</p></div>
+    <div class="card"><h3>CFO</h3><p>Escrow until proof: no payment for ungrounded work, a refund on a FAIL, nothing stranded. A hard cap per agent key, enforced by the chain, not by a policy document.</p></div>
+    <div class="card"><h3>COO</h3><p>The check that a person does today (does this answer really come from our documents?) runs on every job, at once, the same way every time.</p></div>
+    <div class="card"><h3>CTO / CISO</h3><p>The agent holds only a scoped key. A prompt injection can make the model sign a payment; it cannot make the chain execute it. Every rule is open source and mutation-tested.</p></div>
+    <div class="card"><h3>Finance operations</h3><p>One audit trail per job: escrow, deliverable hash, verifier's verdict, release or refund, each a transaction with a hash an auditor can check without asking you.</p></div>
+    <div class="card"><h3>Engineering</h3><p>An SDK and five contracts, MIT. Drop the verifier rule into your own agent, or use the gate as is. Runs on any Shanghai-level EVM chain.</p></div>
+  </div>
+
+  <h3>The staff time it removes</h3>
+  <div class="grid g2">
+    <div class="card">
+      <label for="cj">Agent-bought deliverables a month (your number)</label><input id="cj" type="number" min="0" value="2000">
+      <label for="cm">Minutes a person spends checking one against its sources before approving payment (your number)</label><input id="cm" type="number" min="0" step="0.5" value="4">
+      <label for="cr">Hourly rate, GBP (default: the legal floor)</label><input id="cr" type="number" min="0" step="0.01" value="12.71">
+      <p class="meta" id="csrc"></p>
+    </div>
+    <div class="card"><div class="kpi" id="cy">…<small>a year of staff time, at the rate above</small></div><p id="ch"></p><p class="meta">Computed by <code>sdk/cost.mjs</code> (gated). At the National Living Wage and before employer NI and pension, this is a floor. On-chain gas for a whole job, measured in the run: <b id="cgas">…</b>.</p></div>
+  </div>
+
+  <h3>Today, against the trust layer</h3>
+  <div class="card scroll"><table>
+    <tr><th></th><th>Today: agents with a card or an API key</th><th>With the trust layer</th></tr>
+    <tr><td>Who checks the work</td><td>a person, when they have time, or nobody</td><td>the verifier on every job; the chain re-checks the quote</td></tr>
+    <tr><td>A prompt injection says "pay X"</td><td>the agent's key can pay X</td><td>refused on-chain: X is not on the allowlist, and the cap holds</td></tr>
+    <tr><td>Ungrounded work</td><td>paid, then disputed</td><td>never released; FAIL refunds the buyer</td></tr>
+    <tr><td>Audit</td><td>logs you keep yourself</td><td>a public transaction per step, re-checkable by anyone</td></tr>
+    <tr><td>Licence</td><td>per seat or per transaction</td><td>MIT: no licence fee; you run the contracts</td></tr>
+  </table></div>
+
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Security, compliance, data</h3>
+      <ul><li><b>Keys:</b> the agent never holds the owner key. Session keys are scoped and revocable at once; a key is never re-granted, so old signatures cannot return.</li>
+      <li><b>Data:</b> sources are committed as hashes when a job opens. At release, the cited sources' bytes go on-chain as calldata, so use sources you can publish (public documents, a contract both sides hold). Confidential corpora belong on a permissioned deployment.</li>
+      <li><b>Personal data:</b> none is needed. Agent identities are addresses and a registration file.</li>
+      <li><b>Assurance:</b> every contract and kernel passes a mutation gate in CI; claims are sealed before runs.</li></ul></div>
+    <div class="card"><h3>Roll-out</h3>
+      <ol><li>Run the flow locally or in this page (minutes).</li><li>Deploy the five contracts to your chain (one command; Aevum testnet in this repo).</li><li>Register your agents (ERC-8004), bind their accounts, grant session keys with your caps.</li><li>List the jobs your agents buy, each naming the validator that must sign off.</li><li>Point your agents at the SDK: <code>sessionActionTypedData</code> to sign, <code>verifyDeliverable</code> to pre-check.</li></ol></div>
+    <div class="card"><h3>Support and ownership</h3><p>Supplier: <a href="https://www.ai-nativesolutions.com">AI Native Solutions</a>; start through the public site. Support, service levels and liability are agreed per deployment, in each deployment's agreement. The software is MIT and keeps running without us: you own the contracts you deploy.</p></div>
+    <div class="card"><h3>Risks, answered straight</h3>
+      <ul><li><b>A dishonest verifier?</b> It cannot pass a reworded answer: the chain re-checks the verbatim rule. It can wrongly FAIL work, which refunds the buyer; pick validators with a record (the Validation Registry keeps it).</li>
+      <li><b>A front-runner claims a request hash?</b> They cannot be paid and cannot get the job paid; the worker resubmits, or the buyer is refunded at the deadline.</li>
+      <li><b>Testnet only today.</b> This entry uses test tokens with no value. A production deployment is a fresh deployment of the same contracts on the chain you choose, with its own audit.</li></ul></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>The case for the board</h3><p>Agents that spend money are coming whether or not a firm is ready. This puts the rule where it cannot be talked out of: the chain. Payment waits for proof, a cap holds against any prompt, and every payment carries its own evidence. It is open source, tested by mutation, and running on a public testnet today.</p></div>
+</section>
+
+<section id="criteria">
+  <h2>For the judges: the eight criteria</h2>
+  <div class="card scroll"><table>
+    <tr><th>Criterion</th><th>Where it is met</th></tr>
+    <tr><td>UX</td><td>this page: one-click in-browser run, live verifier, plain-language steps; the CLI prints every step</td></tr>
+    <tr><td>A clear demo with explorer links</td><td><a href="#run">The run</a>: every transaction linked to explorer-test.qday.info</td></tr>
+    <tr><td>Docs</td><td><a href="https://github.com/sjgant80-hub/kar-trust-layer#readme">README</a>, <a href="#blueprint">architecture</a>, <a href="#docs">addresses, env vars, repro, Docker</a></td></tr>
+    <tr><td>Innovation</td><td>fulfilment-gated settlement: the chain itself re-checks that the paid answer is made of the sources' own words</td></tr>
+    <tr><td>Technical</td><td>ERC-8004 identity + validation, a smart account with session keys (cap, expiry, allowlist), ERC-1271 wallet binding, Shanghai-clean build</td></tr>
+    <tr><td>Utility</td><td>any firm whose agents buy document work: research, compliance answers, support replies</td></tr>
+    <tr><td>Safety / trust</td><td>injection refused on-chain, revocable keys, refunds on FAIL, mutation-gated contracts, sealed claims</td></tr>
+    <tr><td>Ecosystem</td><td>the open-source Sovereign Agent Payments SDK (<code>sdk/</code>), MIT</td></tr>
+  </table></div>
+</section>
+
+<section id="paper">
+  <h2>White paper: settlement that waits for proof</h2>
+  <p>Agent commerce has two failure modes that payments alone do not fix. The first is paying for work nobody checked: an agent buys an answer and the money moves whether or not the answer came from anywhere. The second is paying the wrong party: an agent reads untrusted text, and a prompt injection in it asks for a payment. Both are usually handled by a person approving payments, which is the step agents were meant to remove.</p>
+  <p>This build moves both rules into contracts. Payment is <b>fulfilment-gated</b>: the escrow opens against a commitment to the question and to the exact source documents, and closes only when two independent checks agree. The first is the verifier's signed verdict in the ERC-8004 Validation Registry. The second is the chain's own re-run of the part of that verdict it can compute: that the answer is exactly the cited byte ranges of the committed sources. The verifier's judgement (does the copied text address the question?) cannot be re-run on-chain, so it is signed, attributable and recorded against the verifier's identity, and a market rule removes workers whose record falls.</p>
+  <p>Spending is <b>scoped at the key</b>. The agent never holds the account's owner key. It holds a session key whose cap, expiry and allowlist live in the account, and every action it signs is checked against them before a token moves. The run tests this the hard way: it assumes the agent obeyed the injection and signed the payment, and shows the chain refusing it.</p>
+  <h3>DocDec, measured</h3>
+  <p>The verifier rule here is DocDec's verbatim-grounding property: every answer's exact words sit at checkable offsets (DocDec v2 measured this as C6, 955/955). DocDec v2's own benchmark also measured: finding the right passage 83.0% against 66.8% for a tuned-cosine baseline (C1); decision accuracy 70.2% against 51.9% (C2a); multi-hop source pairing 66.3% against 52.9% (C3); holding at 9× the corpus (C4). It failed three of its pre-registered tests: the matched-recall refusal rule (C2b), freshness at 79% against a 95% bar (C5), and memory reuse (C7). Those are DocDec's benchmark results, published on <a href="https://sjgant80-hub.github.io/docdecdemo/">the DocDec demo</a>; this build does not re-claim them. Here, the worker is a copy-only reader and the verifier applies the verbatim and on-question rule.</p>
+  <div class="limits"><b>What this proves, and what it does not.</b> It proves the paid answer's words sit at their cited byte offsets in the sources the buyer committed to, and that the named verifier signed off. It does not prove the answer is the best one, that the sources are true, or that the worker understood them. Offsets are UTF-8 bytes. At release, the cited sources go on-chain as calldata. The explorer's contract verifier is not working yet, so the exact bytecode is published in <code>artifacts/</code> for anyone to recompile and compare.</div>
+</section>
+
+<section id="docs">
+  <h2>Docs</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Network</h3><table>
+      <tr><td>Network</td><td>QDay Aevum Testnet</td></tr><tr><td>Chain id</td><td><code>44005</code></td></tr>
+      <tr><td>RPC</td><td><code>https://rpc-test.qday.info</code></td></tr><tr><td>Explorer</td><td><a href="https://explorer-test.qday.info">explorer-test.qday.info</a></td></tr>
+      <tr><td>tUSD8</td><td><code class="mono">0x456569838f1d43009A91ebA4263147Afd7233483</code> (6 decimals)</td></tr><tr><td>EVM</td><td>Shanghai</td></tr></table></div>
+    <div class="card"><h3>Run on Aevum</h3><pre>export KAR_PRINCIPAL_KEY=0x…   # deploys, relays; tQDAY + 2 tUSD8
+export KAR_WORKER_KEY=0x…      # gets gas from the principal
+export KAR_VALIDATOR_KEY=0x…   # gets gas from the principal
+export KAR_SESSION_KEY=0x…     # only signs
+node flow.mjs --network aevum  # writes runs/aevum.json</pre><p class="meta">Test keys only. The CLI refuses the public local keys on a real network and never prints a key.</p></div>
+    <div class="card"><h3>Docker</h3><pre>docker build -t kar-trust-layer .
+docker run --rm kar-trust-layer
+docker run --rm --env-file .env.aevum kar-trust-layer --network aevum</pre></div>
+    <div class="card"><h3>The SDK</h3><pre>import { verifyDeliverable, readAnswer,
+  sessionActionTypedData, sourcesRoot,
+  deliverableHash } from 'kar-trust-layer';</pre><p class="meta">Install from the repo: <code>npm i github:sjgant80-hub/kar-trust-layer</code>. Hashes match the contracts byte for byte.</p></div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">
+  Built by Kar for <a href="https://www.ai-nativesolutions.com">AI Native Solutions</a>, for the Aevum Builder Challenge #1 (QDay). Test tokens only: tUSD8 and tQDAY have no monetary value. MIT. <a href="https://github.com/sjgant80-hub/kar-trust-layer">Source</a> · <a href="https://github.com/sjgant80-hub/kar-trust-layer/blob/main/CLAIMS.md">Pre-registered claims</a>.<br>Powered by the Konomi architecture, created by Thomas Frumkin.
+</div></footer>
+
+<script type="module">
+// ── sdk/verify.mjs (inlined from the gated kernel; CI checks it is byte-identical) ──
+// verify.mjs — the DocDec verifier rule for a deliverable, as a pure kernel (no I/O, no deps, never throws).
+//
+// A deliverable is an answer plus claims. Each claim cites a byte range [start, end) of one source document.
+// PASS needs all of:
+//   1. at least one claim (an empty answer is a REFUSAL: honest, but nothing to pay for),
+//   2. every claim inside its document, ranges well-formed, at most MAX_CLAIMS claims and MAX_DOCS documents,
+//   3. VERBATIM: the answer is exactly the cited byte ranges joined by single spaces (the reader may only copy),
+//   4. ON-QUESTION: the copied words cover at least `minCoverage` of the question's content terms.
+// Rules 1 to 3 are the same rules FulfilmentGate re-runs on-chain before it releases money. Rule 4 is the
+// verifier's judgement, which the chain cannot re-run; the verifier signs it into the ERC-8004 Validation
+// Registry and the gate waits for that signature.
+// Offsets are UTF-8 BYTE offsets, because that is what the chain slices.
+
+const MAX_DOCS = 16;
+const MAX_CLAIMS = 8;
+const DEFAULT_MIN_COVERAGE = 0.5;
+const TAG = 'docdec-verbatim-v1';
+
+const STOP = new Set(('a an and are as at be by can do does for from has have how in is it its of on or ' +
+  'that the this to was what when where which who why will with must should may would could shall ' +
+  'there their they them then than these those into onto about any each every also only not no yes').split(' '));
+
+const enc = new TextEncoder();
+const dec = new TextDecoder('utf-8', { fatal: false });
+
+function utf8(text) {
+  return typeof text === 'string' ? enc.encode(text) : new Uint8Array(0);
+}
+
+function bytesEqual(a, b) {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
+}
+
+// Content terms: lowercase alphanumeric runs of 3+ characters that are not stopwords.
+function terms(text) {
+  if (typeof text !== 'string') return [];
+  const out = [];
+  const seen = new Set();
+  for (const raw of text.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (raw.length < 3 || STOP.has(raw) || seen.has(raw)) continue;
+    seen.add(raw);
+    out.push(raw);
+  }
+  return out;
+}
+
+// Share of the question's content terms that appear in the copied text. No question terms -> 0.
+function coverage(question, copied) {
+  const q = terms(question);
+  if (q.length === 0) return 0;
+  const have = new Set(terms(copied));
+  let hit = 0;
+  for (const t of q) {
+    if (have.has(t)) hit += 1;
+  }
+  return hit / q.length;
+}
+
+function isIndex(n) {
+  return Number.isInteger(n) && n >= 0 && n <= 0xffffffff;
+}
+
+// Join byte ranges with single spaces, exactly as the gate does on-chain.
+function joinSpans(spans) {
+  let total = 0;
+  for (let i = 0; i < spans.length; i++) total += spans[i].length + (i > 0 ? 1 : 0);
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (let i = 0; i < spans.length; i++) {
+    if (i > 0) {
+      out[at] = 32;
+      at += 1;
+    }
+    out.set(spans[i], at);
+    at += spans[i].length;
+  }
+  return out;
+}
+
+// The first exact occurrence of `phrase` in `doc`, as byte offsets, or null. This is all a copy-only
+// reader is allowed to do: find words that are really there.
+function locate(doc, phrase) {
+  if (typeof doc !== 'string' || typeof phrase !== 'string' || phrase.length === 0) return null;
+  const at = doc.indexOf(phrase);
+  if (at < 0) return null;
+  const start = utf8(doc.slice(0, at)).length;
+  return { start, end: start + utf8(phrase).length };
+}
+
+function fail(reason, extra) {
+  return { verdict: 'FAIL', response: 0, pass: false, reason, ...extra };
+}
+
+// input: { question: string, sources: string[], deliverable: { answer: string, claims: [{doc,start,end}] } }
+function verifyDeliverable(input, opts) {
+  try {
+    const minCoverage = opts && typeof opts.minCoverage === 'number' ? opts.minCoverage : DEFAULT_MIN_COVERAGE;
+    if (!input || typeof input !== 'object') return fail('malformed: no input');
+    const { question, sources, deliverable } = input;
+    if (typeof question !== 'string' || question.length === 0) return fail('malformed: no question');
+    if (!Array.isArray(sources) || sources.length === 0) return fail('malformed: no sources');
+    if (sources.length > MAX_DOCS) return fail('too many sources');
+    for (const s of sources) {
+      if (typeof s !== 'string') return fail('malformed: a source is not text');
+    }
+    if (!deliverable || typeof deliverable !== 'object') return fail('malformed: no deliverable');
+    const { answer, claims } = deliverable;
+    if (typeof answer !== 'string') return fail('malformed: no answer');
+    if (!Array.isArray(claims)) return fail('malformed: claims is not a list');
+    if (claims.length === 0) {
+      return { verdict: 'REFUSE', response: 0, pass: false, reason: 'no claim: the worker refused, nothing grounded to pay for', claims: [] };
+    }
+    if (claims.length > MAX_CLAIMS) return fail('too many claims');
+
+    const docs = sources.map(utf8);
+    const spans = [];
+    const checked = [];
+    for (let i = 0; i < claims.length; i++) {
+      const c = claims[i];
+      if (!c || typeof c !== 'object' || !isIndex(c.doc) || !isIndex(c.start) || !isIndex(c.end)) {
+        return fail(`claim ${i}: malformed`, { claims: checked });
+      }
+      if (c.doc >= docs.length) return fail(`claim ${i}: no such source`, { claims: checked });
+      if (c.start >= c.end) return fail(`claim ${i}: empty or reversed range`, { claims: checked });
+      if (c.end > docs[c.doc].length) return fail(`claim ${i}: range runs past the end of source ${c.doc}`, { claims: checked });
+      const span = docs[c.doc].subarray(c.start, c.end);
+      spans.push(span);
+      checked.push({ index: i, doc: c.doc, start: c.start, end: c.end, quote: dec.decode(span) });
+    }
+
+    const rebuilt = joinSpans(spans);
+    if (!bytesEqual(rebuilt, utf8(answer))) {
+      return fail('not verbatim: the answer is not the cited words', { claims: checked, rebuilt: dec.decode(rebuilt) });
+    }
+
+    const cov = coverage(question, answer);
+    if (cov < minCoverage) {
+      return fail(`off the question: the copied words cover ${Math.round(cov * 100)}% of the question's terms (needs ${Math.round(minCoverage * 100)}%)`,
+        { claims: checked, coverage: cov });
+    }
+    return { verdict: 'PASS', response: 100, pass: true, reason: 'every word of the answer sits at its cited offsets, and it addresses the question', claims: checked, coverage: cov };
+  } catch {
+    return fail('malformed: unreadable input');
+  }
+}
+
+// ── sdk/reader.mjs (inlined from the gated kernel; CI checks it is byte-identical) ──
+// reader.mjs — the worker's copy-only reader, as a pure kernel (no I/O, no deps, never throws).
+//
+// Given a question and source documents, it picks the single sentence that best covers the question's
+// content terms and COPIES it, with its byte offsets. It cannot write a word that is not in a source:
+// the deliverable it returns is, by construction, made of cited spans. Ties go to the earlier document,
+// then the earlier sentence, so the same input always gives the same deliverable.
+// If no sentence shares a content term with the question, it refuses (no claims).
+
+
+// Sentences of `doc` as { text, start, end } with BYTE offsets. A sentence ends at . ! ? or a blank line;
+// leading whitespace and markdown list/heading markers are trimmed off the span, never rewritten.
+function sentences(doc) {
+  if (typeof doc !== 'string') return [];
+  const out = [];
+  const re = /[^.!?\n]+(?:[.!?]+|(?=\n)|$)/g;
+  let m;
+  while ((m = re.exec(doc)) !== null) {
+    let s = m[0];
+    let at = m.index;
+    const lead = s.match(/^[\s#>*\-|]+/);
+    if (lead) {
+      at += lead[0].length;
+      s = s.slice(lead[0].length);
+    }
+    s = s.replace(/\s+$/, '');
+    if (s.length < 12) continue;
+    const start = utf8(doc.slice(0, at)).length;
+    out.push({ text: s, start, end: start + utf8(s).length });
+  }
+  return out;
+}
+
+function readAnswer(question, sources) {
+  try {
+    // No question terms means no sentence can score a hit, so it falls through to the refusal below.
+    // A non-array `sources` has no .entries() and lands in the catch. Neither needs its own guard.
+    const q = terms(question);
+    let best = null;
+    for (const [d, doc] of sources.entries()) {
+      for (const s of sentences(doc)) {
+        const have = new Set(terms(s.text));
+        let hit = 0;
+        for (const t of q) {
+          if (have.has(t)) hit += 1;
+        }
+        if (hit > 0 && (best === null || hit > best.hit)) best = { hit, doc: d, s };
+      }
+    }
+    if (best === null) return { answer: '', claims: [], score: 0 };
+    return {
+      answer: best.s.text,
+      claims: [{ doc: best.doc, start: best.s.start, end: best.s.end }],
+      score: best.hit / q.length,
+    };
+  } catch {
+    return { answer: '', claims: [], score: 0 };
+  }
+}
+
+// ── sdk/policy.mjs (inlined from the gated kernel; CI checks it is byte-identical) ──
+// policy.mjs — pure kernels for the agent's spending wall and its immune screen (no I/O, never throw).
+//
+// checkSessionAction mirrors AgentAccount.executeSession check for check, in the same order, so an agent
+// (or a page) can say BEFORE sending what the chain will do. The chain is the authority; this is the
+// preview. A parity test runs both on the same inputs.
+//
+// screenInjection reads untrusted text (a job description, a deliverable, an email) and flags payment
+// instructions hidden in it. It is a tripwire, not the wall: the wall is the account's allowlist and cap,
+// which hold even when the screen misses and the model obeys.
+
+const KIND_TRANSFER = 0;
+const KIND_CALL = 1;
+
+// session: { cap, spent, expiry, active, allowlist: string[] }   (cap/spent as bigint base units)
+// action:  { kind, target, amount, dataLength, deadline, signerOk, token }
+// now:     unix seconds (number or bigint)
+// Returns { ok, error } where error is the contract's custom error name, or null.
+function checkSessionAction(session, action, now) {
+  try {
+    // a missing session or action throws on first read and lands in the catch below as Malformed
+    if (action.signerOk !== true) return { ok: false, error: 'BadSignature' };
+    if (session.active !== true) return { ok: false, error: 'SessionNotActive' };
+    const t = BigInt(now);
+    if (t > BigInt(session.expiry)) return { ok: false, error: 'SessionExpired' };
+    if (t > BigInt(action.deadline)) return { ok: false, error: 'ActionExpired' };
+    const target = String(action.target).toLowerCase();
+    const allow = Array.isArray(session.allowlist) ? session.allowlist.map((a) => String(a).toLowerCase()) : [];
+    if (!allow.includes(target)) return { ok: false, error: 'RecipientNotAllowed' };
+    const left = BigInt(session.cap) - BigInt(session.spent);
+    if (BigInt(action.amount) > left) return { ok: false, error: 'OverCap' };
+    if (action.kind === KIND_TRANSFER) {
+      if (action.dataLength !== 0) return { ok: false, error: 'BadKind' };
+      return { ok: true, error: null };
+    }
+    if (action.kind === KIND_CALL) {
+      if (target === String(action.token).toLowerCase()) return { ok: false, error: 'TokenCallForbidden' };
+      return { ok: true, error: null };
+    }
+    return { ok: false, error: 'BadKind' };
+  } catch {
+    return { ok: false, error: 'Malformed' };
+  }
+}
+
+const ADDRESS = /0x[0-9a-fA-F]{40}\b|0x[0-9a-fA-F]{2,8}(?:\.{2,3}|…)[0-9a-fA-F]{0,8}|\b0x[A-Za-z]{2,12}\b/g;
+const AMOUNT = /\b\d{1,3}(?:[,_]\d{3})+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*(?:k|m)?\s*(?:tusd8|usd|usdc|tokens?|\$)|\$\s*\d/i;
+const VERB = /\b(pay|send|transfer|wire|approve|withdraw|move|drain)\b/i;
+const OVERRIDE = /\b(ignore (?:all |any )?(?:previous|prior|above) (?:instructions|rules)|system prompt|you are now|new instructions|disregard)\b/i;
+
+// Returns { flagged, reasons: string[], addresses: string[] }.
+function screenInjection(text) {
+  try {
+    // non-text throws on .match and lands in the catch below; empty text simply matches nothing
+    const reasons = [];
+    const addresses = text.match(ADDRESS) || [];
+    const verb = VERB.test(text);
+    const amount = AMOUNT.test(text);
+    if (verb && addresses.length > 0) reasons.push('payment verb with an address');
+    if (verb && amount) reasons.push('payment verb with an amount');
+    if (OVERRIDE.test(text)) reasons.push('tries to override the agent\'s instructions');
+    return { flagged: reasons.length > 0, reasons, addresses };
+  } catch {
+    return { flagged: false, reasons: [], addresses: [] };
+  }
+}
+
+// ── sdk/cost.mjs (inlined from the gated kernel; CI checks it is byte-identical) ──
+// cost.mjs — the staff time the gate takes off a team, priced at the floor (pure, never throws).
+//
+// Without the gate, a person checks each agent-bought deliverable against its sources before the payment
+// is approved. With it, the check is the verifier's and the chain's. The only sourced figure is the floor
+// rate: the UK National Living Wage from 1 April 2026, GBP 12.71 an hour (gov.uk), before employer NI and
+// pension, so the result is a floor, not an estimate. Jobs and minutes are the buyer's own numbers.
+
+const NLW_2026_GBP = 12.71;
+const NLW_SOURCE = 'UK National Living Wage from 1 April 2026: GBP 12.71/hour (gov.uk, National Minimum Wage and National Living Wage rates)';
+
+// input: { jobsPerMonth, minutesPerCheck, hourlyRate? }  ->  { hoursPerMonth, perMonth, perYear, rate } or null
+function staffTime(input) {
+  try {
+    const jobs = Number(input.jobsPerMonth);
+    const minutes = Number(input.minutesPerCheck);
+    const rate = input.hourlyRate === undefined ? NLW_2026_GBP : Number(input.hourlyRate);
+    if (!(jobs >= 0) || !(minutes >= 0) || !(rate >= 0)) return null;
+    if (!Number.isFinite(jobs * minutes * rate)) return null;
+    const hoursPerMonth = (jobs * minutes) / 60;
+    const perMonth = hoursPerMonth * rate;
+    return { hoursPerMonth, perMonth, perYear: perMonth * 12, rate };
+  } catch {
+    return null;
+  }
+}
+
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const short = (h) => (h ? h.slice(0, 10) + '…' + h.slice(-6) : '');
+const fmt2 = (n) => Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const STEP_TITLES = { S0: 'Deploy', S1: 'ERC-8004 identities', S2: 'Fund and scope the key', S3: 'Fallmarket listing', S4: 'Take the job', S5: 'The injection', S6: 'The work', S7: 'The verdict', S8: 'Release on proof', S9: 'An ungrounded deliverable', S10: 'Metabolism', S11: 'Revoke' };
+
+// theme
+(() => {
+  let saved = null;
+  try { saved = localStorage.getItem('theme'); } catch {}
+  if (saved) document.documentElement.dataset.theme = saved;
+  $('theme').addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('theme', document.documentElement.dataset.theme); } catch {}
+  });
+})();
+
+async function getJSON(path) {
+  const r = await fetch(path, { cache: 'no-cache' });
+  if (!r.ok) throw new Error(path + ' ' + r.status);
+  return r.json();
+}
+
+let JOB = null;
+let TRAIL = null;
+
+function txLink(trail, hash) {
+  if (!hash) return '';
+  return trail.explorer ? `<a class="mono" href="${trail.explorer}/tx/${hash}" target="_blank" rel="noopener">${short(hash)}</a>` : `<span class="mono" title="${hash}">${short(hash)}</span>`;
+}
+function addrLink(trail, a) {
+  return trail.explorer ? `<a class="mono" href="${trail.explorer}/address/${a}" target="_blank" rel="noopener">${a}</a>` : `<span class="mono">${a}</span>`;
+}
+function describeEvents(s) {
+  if (s.error) return `refused on-chain: <b>${esc(s.error.name)}</b>${s.error.args && s.error.args.length ? ' (' + esc(s.error.args.map(String).join(', ')) + ')' : ''}`;
+  const names = (s.events || []).map((e) => e.name).filter(Boolean);
+  return names.length ? 'events: ' + esc([...new Set(names)].join(', ')) : '';
+}
+
+function renderTrail(trail) {
+  TRAIL = trail;
+  const onAevum = trail.network === 'aevum';
+  const refused = trail.steps.filter((s) => s.status === 'reverted');
+  const passed = trail.checks.filter((c) => c.ok).length;
+  const gas = trail.steps.reduce((a, s) => a + Number(s.gasUsed || 0), 0);
+  $('badges').innerHTML = [
+    `<span class="badge"><span class="dot ${onAevum ? 'ok' : 'warn'}"></span>${onAevum ? 'QDay Aevum testnet · chain 44005' : 'local replay (Shanghai EVM)'}</span>`,
+    `<span class="badge"><span class="dot ok"></span>${trail.steps.length} transactions</span>`,
+    `<span class="badge"><span class="dot bad"></span>${refused.length} refused on-chain, as designed</span>`,
+    `<span class="badge"><span class="dot ${passed === trail.checks.length ? 'ok' : 'bad'}"></span>${passed}/${trail.checks.length} checks</span>`,
+    `<span class="badge"><span class="dot ${trail.final.balances.attacker === '0.00' ? 'ok' : 'bad'}"></span>attacker received ${trail.final.balances.attacker}</span>`,
+  ].join('');
+  $('runsub').innerHTML = onAevum
+    ? `The recorded run on QDay Aevum testnet, ${esc(trail.started.slice(0, 16).replace('T', ' '))} UTC, from commit <code>${esc((trail.commit || '').slice(0, 7))}</code>. Click any hash to open it on the explorer.`
+    : `<span class="note" style="display:block">This is the recorded <b>local</b> run (an in-process Shanghai EVM with a mock tUSD8). The Aevum testnet run replaces it here as soon as it is made; you can reproduce this one in your browser below.</span>`;
+  $('kpis').innerHTML = [
+    ['Escrowed and released', trail.final.balances.worker + ' tUSD8', 'to the worker, after PASS + re-check'],
+    ['Refunded on FAIL', '1.00 tUSD8', 'the reworded answer was never paid'],
+    ['Injected payment', '10,000 tUSD8 asked', 'paid: ' + trail.final.balances.attacker],
+    ['Gas for the whole run', gas.toLocaleString('en-GB'), 'units, ' + trail.steps.length + ' transactions'],
+  ].map(([t, v, s]) => `<div class="card"><div class="meta">${t}</div><div class="kpi">${esc(v)}<small>${esc(s)}</small></div></div>`).join('');
+  let last = '';
+  $('timeline').innerHTML = trail.steps.map((s) => {
+    const head = s.step !== last ? `<div class="meta" style="font-weight:700;color:var(--ink)">${esc(STEP_TITLES[s.step] || s.step)}</div>` : '';
+    last = s.step;
+    const pill = s.status === 'success' ? '<span class="pill ok">ok</span>' : '<span class="pill bad">refused</span>';
+    return `<li class="${s.status === 'success' ? '' : 'refused'}"><div class="st">${esc(s.step)}</div><div class="what">${head}<b>${esc(s.label)}</b> ${pill}<div class="meta">${esc(s.actor)} · ${txLink(trail, s.hash)} · block ${esc(s.block)} · gas ${esc(s.gasUsed)}${describeEvents(s) ? ' · ' + describeEvents(s) : ''}</div></div></li>`;
+  }).join('');
+  const b = trail.final.balances;
+  $('final').innerHTML = `<tr><th>Who</th><th class="num">tUSD8</th></tr>
+    <tr><td>Worker (paid for the grounded answer)</td><td class="num">${b.worker}</td></tr>
+    <tr><td>Agent account (refunded for the reworded one)</td><td class="num">${b.agentAccount}</td></tr>
+    <tr><td>FulfilmentGate (nothing stranded)</td><td class="num">${b.gate}</td></tr>
+    <tr><td>0xBAD… (the injection's address)</td><td class="num">${b.attacker}</td></tr>
+    <tr><td>Session key: spent of cap</td><td class="num">${trail.final.session.spent} / ${trail.final.session.cap} · ${trail.final.session.active ? 'active' : 'revoked'}</td></tr>
+    <tr><td>Worker's verified record</td><td class="num">${trail.final.workerValidations.count} verdicts, average ${trail.final.workerValidations.average}/100</td></tr>
+    <tr><td>Listing</td><td class="num">${trail.final.listingLive ? 'live' : 'pruned by the market'}</td></tr>`;
+  $('checks').innerHTML = trail.checks.map((c) => `<li>${c.ok ? '✓' : '✗'} ${esc(c.name)}</li>`).join('');
+  $('contracts').innerHTML = '<tr><th>Contract</th><th>Address</th></tr>' + Object.entries(trail.contracts).map(([n, a]) => `<tr><td>${esc(n)}</td><td>${addrLink(trail, a)}</td></tr>`).join('') +
+    `<tr><td>Agents</td><td>buyer #${trail.ids.buyerAgentId}, worker #${trail.ids.workerAgentId}, DocDec verifier #${trail.ids.validatorAgentId}; listing #${trail.ids.listingId}; jobs #${trail.ids.job1} (paid), #${trail.ids.job2} (refunded)</td></tr>`;
+  // diagram, traced from the run
+  $('d-buyer').textContent = trail.ids.buyerAgentId;
+  $('d-worker').textContent = trail.ids.workerAgentId;
+  $('d-val').textContent = trail.ids.validatorAgentId;
+  $('d-cap').textContent = trail.final.session.cap;
+  $('d-paid').textContent = b.worker;
+  $('d-att').textContent = b.attacker;
+  const rel = trail.steps.find((s) => s.step === 'S8');
+  if (rel) $('d-reltx').textContent = 'tx ' + short(rel.hash);
+  $('cgas').textContent = gas.toLocaleString('en-GB') + ' gas units for all ' + trail.steps.length + ' transactions (both jobs, both attacks, deploys included)';
+}
+
+// ── the verifier playground ──────────────────────────────────────────────────
+function presets() {
+  const t = TRAIL && TRAIL.deliverables;
+  const paid = t ? t.job1 : readAnswer(JOB.question, JOB.sources.map((s) => s.text));
+  const rew = t ? t.job2 : { answer: 'In short, ' + paid.answer, claims: paid.claims, question: JOB.question };
+  const q2 = (t && t.job2.question) || JOB.question2;
+  const off = readAnswer('late fees owner address', JOB.sources.map((s) => s.text));
+  return {
+    paid: { q: (t && t.job1.question) || JOB.question, a: paid.answer, c: paid.claims },
+    reworded: { q: q2, a: rew.answer, c: rew.claims },
+    offq: { q: JOB.question2, a: paid.answer, c: paid.claims },
+    refuse: { q: 'What is the capital of France?', a: '', c: [] },
+  };
+}
+function setPreset(name) {
+  const p = presets()[name];
+  $('vq').value = p.q;
+  $('va').value = p.a;
+  $('vc').value = JSON.stringify(p.c.map((c) => ({ doc: c.doc, start: c.start, end: c.end })));
+  verifyNow();
+}
+function markSources(claims) {
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+  $('srcs').innerHTML = JOB.sources.map((s, i) => {
+    const bytes = enc.encode(s.text);
+    const mine = (claims || []).filter((c) => c && c.doc === i && Number.isInteger(c.start) && Number.isInteger(c.end) && c.start < c.end && c.end <= bytes.length).sort((a, b) => a.start - b.start);
+    let html = '';
+    let at = 0;
+    for (const c of mine) {
+      if (c.start < at) continue;
+      html += esc(dec.decode(bytes.subarray(at, c.start))) + '<mark>' + esc(dec.decode(bytes.subarray(c.start, c.end))) + '</mark>';
+      at = c.end;
+    }
+    html += esc(dec.decode(bytes.subarray(at)));
+    return `<div class="meta" style="margin-top:8px">source ${i}: ${esc(s.title)} · ${bytes.length} bytes</div><div class="src">${html}</div>`;
+  }).join('');
+}
+function verifyNow() {
+  let claims;
+  try { claims = JSON.parse($('vc').value || '[]'); } catch { claims = 'unreadable'; }
+  const r = verifyDeliverable({ question: $('vq').value, sources: JOB.sources.map((s) => s.text), deliverable: { answer: $('va').value, claims } });
+  $('vout').className = 'verdict ' + r.verdict;
+  $('vout').textContent = `${r.verdict} · ${r.response}/100 · ${r.reason}`;
+  $('vwhy').innerHTML = r.rebuilt !== undefined ? 'The cited bytes actually say: <code>' + esc(r.rebuilt) + '</code>' : (r.coverage !== undefined ? 'Question coverage: ' + Math.round(r.coverage * 100) + '%' : '');
+  markSources(Array.isArray(claims) ? claims : []);
+}
+['vq', 'va', 'vc'].forEach((id) => $(id).addEventListener('input', verifyNow));
+document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => setPreset(b.dataset.preset)));
+$('readerBtn').addEventListener('click', () => {
+  const d = readAnswer($('vq').value, JOB.sources.map((s) => s.text));
+  $('va').value = d.answer;
+  $('vc').value = JSON.stringify(d.claims);
+  verifyNow();
+});
+
+// ── the wall playground ──────────────────────────────────────────────────────
+const TOKEN = '0x456569838f1d43009A91ebA4263147Afd7233483';
+function wallNow() {
+  const GATE = (TRAIL && TRAIL.contracts.FulfilmentGate) || '0x0000000000000000000000000000000000000001';
+  const units = (x) => BigInt(Math.round(Number(x || 0) * 1e6));
+  const target = { gate: GATE, bad: '0xBAD000000000000000000000000000000000BaD0', token: TOKEN }[$('wt').value];
+  const kind = $('wt').value === 'gate' ? KIND_CALL : ($('wt').value === 'token' ? KIND_CALL : KIND_TRANSFER);
+  const session = { cap: units(2), spent: units($('ws').value), expiry: 2n ** 40n, active: !$('wr').checked, allowlist: $('wt').value === 'token' ? [GATE, TOKEN] : [GATE] };
+  const r = checkSessionAction(session, { kind, target, amount: units($('wa').value), dataLength: kind === KIND_CALL ? 164 : 0, deadline: 2n ** 40n, signerOk: true, token: TOKEN }, 1);
+  const why = { RecipientNotAllowed: 'that address is not on the key\'s allowlist', OverCap: 'it would take the key past its 2.00 tUSD8 cap', SessionNotActive: 'the owner revoked this key', TokenCallForbidden: 'a session may never call the token contract directly (that would bypass the allowlist), even if someone allowlisted it', Malformed: 'the input is not a number' };
+  $('wout').className = 'verdict ' + (r.ok ? 'PASS' : 'FAIL');
+  $('wout').textContent = r.ok ? 'The chain would execute this.' : `Refused on-chain: ${r.error}, because ${why[r.error] || r.error}.`;
+}
+['wt', 'wa', 'ws', 'wr'].forEach((id) => $(id).addEventListener('input', wallNow));
+
+function screenNow() {
+  const r = screenInjection($('it').value);
+  $('iout').className = 'verdict ' + (r.flagged ? 'FAIL' : 'PASS');
+  $('iout').textContent = r.flagged ? 'Flagged: ' + r.reasons.join('; ') + (r.addresses.length ? ' · addresses: ' + r.addresses.join(', ') : '') : 'Nothing flagged.';
+}
+$('it').addEventListener('input', screenNow);
+
+// ── cost ─────────────────────────────────────────────────────────────────────
+function costNow() {
+  const r = staffTime({ jobsPerMonth: $('cj').value, minutesPerCheck: $('cm').value, hourlyRate: $('cr').value === '' ? undefined : $('cr').value });
+  $('csrc').textContent = 'Floor rate source: ' + NLW_SOURCE + '.';
+  if (!r) { $('cy').firstChild.textContent = '—'; $('ch').textContent = 'Enter non-negative numbers.'; return; }
+  $('cy').firstChild.textContent = '£' + fmt2(r.perYear);
+  $('ch').textContent = `${fmt2(r.hoursPerMonth)} hours a month of checking deliverables against sources, at £${fmt2(r.rate)} an hour: £${fmt2(r.perMonth)} a month.`;
+}
+['cj', 'cm', 'cr'].forEach((id) => $(id).addEventListener('input', costNow));
+
+// ── run it in the browser ────────────────────────────────────────────────────
+$('runBtn').addEventListener('click', async () => {
+  const btn = $('runBtn');
+  btn.disabled = true;
+  const log = $('runLog');
+  log.textContent = 'Loading the in-browser EVM and the six contracts…\n';
+  const t0 = performance.now();
+  try {
+    const names = ['AgentIdentityRegistry', 'ValidationRegistry', 'Fallmarket', 'AgentAccount', 'FulfilmentGate', 'MockUSD8'];
+    const [mod, ...arts] = await Promise.all([import('./app/evm.js'), ...names.map((n) => getJSON(`artifacts/${n}.json`))]);
+    const art = Object.fromEntries(names.map((n, i) => [n, arts[i]]));
+    const trail = await mod.runInBrowser({ art, job: JOB, onLog: (l) => { log.textContent += l + '\n'; log.scrollTop = log.scrollHeight; } });
+    const ok = trail.checks.filter((c) => c.ok).length;
+    const refused = trail.steps.filter((s) => s.status === 'reverted').map((s) => s.error.name).join(', ');
+    $('runResult').innerHTML = `<span class="pill ok">done</span> ${trail.steps.length} transactions in ${((performance.now() - t0) / 1000).toFixed(1)} s on the in-page chain; ${ok}/${trail.checks.length} checks passed; refused on-chain: ${esc(refused)}; attacker received ${trail.final.balances.attacker}.`;
+  } catch (e) {
+    $('runResult').innerHTML = `<span class="pill bad">failed</span> ${esc(e.message)}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ── load ─────────────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    JOB = await getJSON('fixtures/job.json');
+    $('it').value = JOB.injection;
+    let index = { aevum: false };
+    try { index = await getJSON('runs/index.json'); } catch {}
+    const trail = await getJSON(index.aevum ? 'runs/aevum.json' : 'runs/local.json');
+    renderTrail(trail);
+  } catch (e) {
+    $('badges').innerHTML = `<span class="badge"><span class="dot bad"></span>could not load the run: ${esc(e.message)}</span>`;
+  }
+  if (JOB) { setPreset('paid'); screenNow(); }
+  wallNow();
+  costNow();
+  try {
+    const g = await getJSON('receipts/mutation-summary.json');
+    $('gateNote').textContent = g.text;
+  } catch {}
+})();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
