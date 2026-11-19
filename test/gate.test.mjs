@@ -327,6 +327,14 @@ test('99 is a fail and refunds; 100 and an unanswered request do not', async () 
   await w.reverts(refund(jOther), 'NotRefundable');
 });
 
+test('an open job is never refunded on a verdict for a deliverable nobody submitted', async () => {
+  const open = await openJob();
+  // the worker asks for (and the validator gives) a FAIL on the hash an empty submission would have
+  await validate(requestHash(w.chain.chainId, gate, open.id, ZERO32), 0);
+  await w.reverts(refund(open), 'NotRefundable');
+  assert.equal(await state(open), 1);
+});
+
 test('an open job refunds only after its deadline (not at it); a submitted one too', async () => {
   const open = await openJob({ deadlineIn: 20n });
   await w.reverts(refund(open), 'NotRefundable');

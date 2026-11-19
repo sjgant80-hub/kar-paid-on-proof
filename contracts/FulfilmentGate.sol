@@ -236,10 +236,13 @@ contract FulfilmentGate {
         if (j.state == State.None) revert NoSuchJob();
     }
 
+    // The balance delta is the only thing trusted: a reverted call, a `false` return, a fee skimmed on
+    // transfer and a silent no-op all leave it short of `amount` (the price is never 0), so one check
+    // covers them all. A separate return-value check here would be dead code behind this one.
     function _pull(address from, uint256 amount) private {
         uint256 before = IERC20G(token).balanceOf(address(this));
-        (bool ok, bytes memory ret) = token.call(abi.encodeWithSelector(IERC20G.transferFrom.selector, from, address(this), amount));
-        if (!ok || (ret.length != 0 && !abi.decode(ret, (bool)))) revert TransferFailed();
+        (bool sent,) = token.call(abi.encodeWithSelector(IERC20G.transferFrom.selector, from, address(this), amount));
+        sent;
         if (IERC20G(token).balanceOf(address(this)) - before != amount) revert TransferFailed();
     }
 

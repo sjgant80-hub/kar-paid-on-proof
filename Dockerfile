@@ -13,6 +13,8 @@ COPY lib ./lib
 COPY sdk ./sdk
 COPY tools ./tools
 COPY flow.mjs ./
+# the audit trail is written to /app/runs; the image runs as the unprivileged node user
+RUN mkdir -p /app/runs && chown node:node /app/runs
 USER node
 ENTRYPOINT ["node", "flow.mjs"]
 CMD ["--network", "local"]

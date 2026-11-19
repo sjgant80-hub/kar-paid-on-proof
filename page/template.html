@@ -74,7 +74,7 @@ footer{padding:26px 0 40px;color:var(--muted);font-size:.9em;border-top:1px soli
 <main class="wrap">
 <div class="hero">
   <h1>An AI agent should pay only for checked work, and never pay an attacker.</h1>
-  <p class="lead">Kar Trust Layer is settlement for agent commerce on <b>QDay Aevum testnet</b>. An agent with an <b>ERC-8004</b> identity takes a job from <b>Fallmarket</b> through a <b>session key</b> it cannot exceed. A worker delivers an answer copied from the job's sources. The <b>DocDec verifier</b> signs off, and the <b>FulfilmentGate</b> releases <b>tUSD8</b> only after the chain re-checks every quoted word. A prompt injection that tells the agent to pay someone else is refused by the chain, even when the agent obeys it.</p>
+  <p class="lead">Kar Trust Layer is settlement for agent commerce, built for <b>QDay Aevum testnet</b>. An agent with an <b>ERC-8004</b> identity takes a job from <b>Fallmarket</b> through a <b>session key</b> it cannot exceed. A worker delivers an answer copied from the job's sources. The <b>DocDec verifier</b> signs off, and the <b>FulfilmentGate</b> releases <b>tUSD8</b> only after the chain re-checks every quoted word. A prompt injection that tells the agent to pay someone else is refused by the chain, even when the agent obeys it.</p>
   <div class="badges" id="badges"><span class="badge"><span class="dot warn"></span>loading the run…</span></div>
 </div>
 
@@ -108,7 +108,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
 
 <section id="browser">
   <h2>Run it in your browser</h2>
-  <p class="sub">This loads an in-browser Shanghai EVM (the reference JavaScript implementation, ethereumjs), deploys the six contracts from the exact bytecode in <code>artifacts/</code>, and runs the same <code>lib/flow.mjs</code> that ran on Aevum. It takes a few seconds.</p>
+  <p class="sub">This loads an in-browser Shanghai EVM (the reference JavaScript implementation, ethereumjs), deploys the six contracts from the exact bytecode in <code>artifacts/</code> (the bytes that go to Aevum), and runs the same <code>lib/flow.mjs</code> that runs on Aevum. It takes a few seconds.</p>
   <div class="btns"><button class="btn" id="runBtn" type="button">Run the whole flow here</button></div>
   <div class="log" id="runLog" aria-live="polite">Press the button. Each line is a transaction on the in-page chain.</div>
   <p id="runResult"></p>
@@ -253,7 +253,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
       <label for="cr">Hourly rate, GBP (default: the legal floor)</label><input id="cr" type="number" min="0" step="0.01" value="12.71">
       <p class="meta" id="csrc"></p>
     </div>
-    <div class="card"><div class="kpi" id="cy">…<small>a year of staff time, at the rate above</small></div><p id="ch"></p><p class="meta">Computed by <code>sdk/cost.mjs</code> (gated). At the National Living Wage and before employer NI and pension, this is a floor. On-chain gas for a whole job, measured in the run: <b id="cgas">…</b>.</p></div>
+    <div class="card"><div class="kpi" id="cy">…<small>a year of staff time, at the rate above</small></div><p id="ch"></p><p class="meta">Computed by <code>sdk/cost.mjs</code> (gated). At the National Living Wage and before employer NI and pension, this is a floor. On-chain gas for the whole recorded run, measured: <b id="cgas">…</b>.</p></div>
   </div>
 
   <h3>Today, against the trust layer</h3>
@@ -280,7 +280,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
       <li><b>A front-runner claims a request hash?</b> They cannot be paid and cannot get the job paid; the worker resubmits, or the buyer is refunded at the deadline.</li>
       <li><b>Testnet only today.</b> This entry uses test tokens with no value. A production deployment is a fresh deployment of the same contracts on the chain you choose, with its own audit.</li></ul></div>
   </div>
-  <div class="card" style="margin-top:14px"><h3>The case for the board</h3><p>Agents that spend money are coming whether or not a firm is ready. This puts the rule where it cannot be talked out of: the chain. Payment waits for proof, a cap holds against any prompt, and every payment carries its own evidence. It is open source, tested by mutation, and running on a public testnet today.</p></div>
+  <div class="card" style="margin-top:14px"><h3>The case for the board</h3><p>Agents that spend money are coming whether or not a firm is ready. This puts the rule where it cannot be talked out of: the chain. Payment waits for proof, a cap holds against any prompt, and every payment carries its own evidence. It is open source and tested by mutation; <span id="boardTail">it runs end to end on a Shanghai EVM and in your browser, built for QDay Aevum testnet.</span></p></div>
 </section>
 
 <section id="criteria">
@@ -288,7 +288,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
   <div class="card scroll"><table>
     <tr><th>Criterion</th><th>Where it is met</th></tr>
     <tr><td>UX</td><td>this page: one-click in-browser run, live verifier, plain-language steps; the CLI prints every step</td></tr>
-    <tr><td>A clear demo with explorer links</td><td><a href="#run">The run</a>: every transaction linked to explorer-test.qday.info</td></tr>
+    <tr><td>A clear demo with explorer links</td><td id="critDemo"><a href="#run">The run</a>: every transaction with its hash; once the Aevum testnet run is recorded, each links to explorer-test.qday.info</td></tr>
     <tr><td>Docs</td><td><a href="https://github.com/sjgant80-hub/kar-trust-layer#readme">README</a>, <a href="#blueprint">architecture</a>, <a href="#docs">addresses, env vars, repro, Docker</a></td></tr>
     <tr><td>Innovation</td><td>fulfilment-gated settlement: the chain itself re-checks that the paid answer is made of the sources' own words</td></tr>
     <tr><td>Technical</td><td>ERC-8004 identity + validation, a smart account with session keys (cap, expiry, allowlist), ERC-1271 wallet binding, Shanghai-clean build</td></tr>
@@ -428,6 +428,10 @@ function renderTrail(trail) {
   const rel = trail.steps.find((s) => s.step === 'S8');
   if (rel) $('d-reltx').textContent = 'tx ' + short(rel.hash);
   $('cgas').textContent = gas.toLocaleString('en-GB') + ' gas units for all ' + trail.steps.length + ' transactions (both jobs, both attacks, deploys included)';
+  if (onAevum) {
+    $('boardTail').textContent = 'it is running on QDay Aevum testnet today: every step of the run above is a transaction you can open on the explorer.';
+    $('critDemo').innerHTML = '<a href="#run">The run</a>: every transaction linked to explorer-test.qday.info';
+  }
 }
 
 // ── the verifier playground ──────────────────────────────────────────────────

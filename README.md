@@ -1,7 +1,8 @@
 # Kar trust layer: settlement that waits for proof
 
-**▶ Live: https://sjgant80-hub.github.io/kar-trust-layer/**: the page explains itself, replays the real testnet run with
-explorer links, re-checks every deliverable in your browser, and runs the whole flow on an in-browser EVM.
+**▶ Live: https://sjgant80-hub.github.io/kar-trust-layer/**: the page explains itself, replays the recorded run with every
+transaction hash (with Aevum explorer links once the testnet run is recorded), re-checks every deliverable in your
+browser, and runs the whole flow on an in-browser EVM.
 
 An AI agent should not be able to pay for work nobody checked, and it should not be able to pay an attacker at all.
 This is the trust layer for agent commerce, built for **QDay Aevum testnet** (chain 44005) and its **tUSD8** test token
