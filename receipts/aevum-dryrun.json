@@ -1,0 +1,46 @@
+{
+ "network": "QDay Aevum testnet",
+ "chainId": 44005,
+ "block": "3542767",
+ "at": "2026-11-19T02:57:28.599Z",
+ "simulatedOnly": true,
+ "ok": true,
+ "rows": [
+  {
+   "contract": "AgentIdentityRegistry",
+   "gas": "1836677",
+   "runtimeBytes": 8246,
+   "artifactBytes": 8246,
+   "sizeMatches": true,
+   "exactMatch": true
+  },
+  {
+   "contract": "ValidationRegistry",
+   "gas": "813776",
+   "runtimeBytes": 3508,
+   "artifactBytes": 3508,
+   "sizeMatches": true
+  },
+  {
+   "contract": "Fallmarket",
+   "gas": "813865",
+   "runtimeBytes": 3506,
+   "artifactBytes": 3506,
+   "sizeMatches": true
+  },
+  {
+   "contract": "FulfilmentGate",
+   "gas": "1716073",
+   "runtimeBytes": 7679,
+   "artifactBytes": 7679,
+   "sizeMatches": true
+  },
+  {
+   "contract": "AgentAccount",
+   "gas": "1312453",
+   "runtimeBytes": 5816,
+   "artifactBytes": 5816,
+   "sizeMatches": true
+  }
+ ]
+}
