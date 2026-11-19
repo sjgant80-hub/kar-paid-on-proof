@@ -1,5 +1,5 @@
 {
- "at": "2026-11-19T13:40:58.891Z",
+ "at": "2026-11-19T14:12:22.163Z",
  "rehearsal": true,
  "sent": "nothing",
  "steps": [
@@ -13,7 +13,11 @@
   },
   {
    "ok": true,
-   "what": "receipt checker on the live node: the real transaction 0x938c3eae… (block 3580881) matches; the made-up hash is reported missing"
+   "what": "receipt checker on the live node: the real transaction 0x5691c1cb… (block 3582729) matches; the made-up hash is reported missing"
+  },
+  {
+   "ok": true,
+   "what": "the explorer's verifier answers and offers v0.8.24+commit.e11b9ed9 (whether it verifies is only known after the deploy; the result is recorded either way)"
   },
   {
    "ok": true,

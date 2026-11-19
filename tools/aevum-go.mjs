@@ -67,6 +67,11 @@ if (rehearse) {
   const v = await verifyTrail(pub, probe, null, { retries: 1 });
   say(v.chainId === 44005, `the node answers as chain ${v.chainId}`);
   say(v.matched === 1 && v.mismatches.length === 1 && v.mismatches[0].what === 'no receipt on the chain', `receipt checker on the live node: the real transaction ${real.hash.slice(0, 10)}… (block ${head.number}) matches; the made-up hash is reported missing`);
+  // the explorer's source verifier: does it answer, and does it offer our exact compiler build?
+  const want = 'v' + solc.version().replace(/\.Emscripten.*$/, '');
+  const cfg = await fetch('https://explorer-test.qday.info/api/v2/smart-contracts/verification/config').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const offers = Boolean(cfg && (cfg.solidity_compiler_versions || []).includes(want));
+  say(offers, `the explorer's verifier answers and offers ${want} (whether it verifies is only known after the deploy; the result is recorded either way)`);
   // the page flip and the record fill, in memory, on a stand-in trail
   const data = loadPageData();
   const fake = standIn(data.trail);
