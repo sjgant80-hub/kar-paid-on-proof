@@ -1,5 +1,17 @@
 {
- "text": "Last gate receipts: cost.mjs 6/6 · policy.mjs 14/14 · reader.mjs 9/9 · verify.mjs 49/49 mutants killed; every kernel never throws under fuzz; CLEAN.",
+ "text": "CI run 44444888810 (commit 98cdbe8): FulfilmentGate 44/44 + 45/45 · AgentAccount 17/17 + 35/35 · AgentIdentityRegistry 23/23 + 33/33 · ValidationRegistry 16/16 + 17/17 · Fallmarket 13/13 + 19/19 (witness + Solidity operators) · verify 49/49 · reader 9/9 · policy 14/14 · cost 6/6. 340 mutants, all killed, none baselined; every kernel never throws under fuzz. CLEAN.",
  "clean": true,
- "generated": "2026-11-19T02:04:47.545Z"
+ "run": "https://github.com/sjgant80-hub/kar-trust-layer/actions/runs/44444888810",
+ "commit": "98cdbe8",
+ "files": {
+  "contracts/FulfilmentGate.sol": { "witness": "44/44", "solidity": "45/45" },
+  "contracts/AgentAccount.sol": { "witness": "17/17", "solidity": "35/35" },
+  "contracts/AgentIdentityRegistry.sol": { "witness": "23/23", "solidity": "33/33" },
+  "contracts/ValidationRegistry.sol": { "witness": "16/16", "solidity": "17/17" },
+  "contracts/Fallmarket.sol": { "witness": "13/13", "solidity": "19/19" },
+  "sdk/verify.mjs": { "witness": "49/49", "fuzz": "never throws" },
+  "sdk/reader.mjs": { "witness": "9/9", "fuzz": "never throws" },
+  "sdk/policy.mjs": { "witness": "14/14", "fuzz": "never throws" },
+  "sdk/cost.mjs": { "witness": "6/6", "fuzz": "never throws" }
+ }
 }
