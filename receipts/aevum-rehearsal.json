@@ -1,0 +1,32 @@
+{
+ "at": "2026-11-19T13:40:58.891Z",
+ "rehearsal": true,
+ "sent": "nothing",
+ "steps": [
+  {
+   "ok": true,
+   "what": "read-only dry run on Aevum: every contract deploys in simulation"
+  },
+  {
+   "ok": true,
+   "what": "the node answers as chain 44005"
+  },
+  {
+   "ok": true,
+   "what": "receipt checker on the live node: the real transaction 0x938c3eae… (block 3580881) matches; the made-up hash is reported missing"
+  },
+  {
+   "ok": true,
+   "what": "page flip: rebuilt from an Aevum trail, 32/32 hashes link to the explorer and the Aevum panel says recorded"
+  },
+  {
+   "ok": true,
+   "what": "record fill: P12 written as PASS with every hash in the results table (in memory only)"
+  },
+  {
+   "ok": true,
+   "what": "README addresses written with explorer links (in memory only)"
+  }
+ ],
+ "ok": true
+}

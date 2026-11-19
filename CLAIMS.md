@@ -43,4 +43,8 @@ in the page's in-browser EVM): 32 transactions, 4 refused on-chain as designed, 
 | P9 | PASS (local): gate 0.00, attacker 0.00, worker 1.00, agent account 1.00 |
 | P10 | PASS (local): preview == chain on all 5 session actions in the run (2 accepted, 3 refused) |
 | P11 | PASS on GitHub's runner, [CI run 44444888810](https://github.com/sjgant80-hub/kar-trust-layer/actions/runs/44444888810) (commit 98cdbe8): witness v0.7 + the Solidity operators: FulfilmentGate 44/44 + 45/45, AgentAccount 17/17 + 35/35, AgentIdentityRegistry 23/23 + 33/33, ValidationRegistry 16/16 + 17/17, Fallmarket 13/13 + 19/19; kernels verify 49/49, reader 9/9, policy 14/14, cost 6/6; every kernel never throws under fuzz. 340 mutants, all killed, none baselined. What the gate caught on the way, fixed in code rather than baselined: two equivalent loop-bound mutants (verify, reader) and one reader guard left dead by the loop rewrite (two dead guards in policy were removed by inspection before the first run); a return-value check in `FulfilmentGate._pull` that was dead behind its balance-delta check (removed); and one real test gap: an open job refunded on a verdict for a deliverable nobody submitted (test added; the guard was right). |
-| P12 | PENDING: waits on a funded testnet key (Simon's yes) |
+| P12 | <!--P12-->PENDING: the testnet run waits on test gas at the deployer address. When it lands, `tools/aevum-go.mjs` runs the flow, re-reads every hash from Aevum's own receipts and writes this cell and the table below from them.<!--/P12--> |
+
+<!--AEVUM-RESULTS-->
+**QDay Aevum testnet:** not run yet. Nothing in this file is an Aevum transaction until this block is filled from `runs/aevum.json`.
+<!--/AEVUM-RESULTS-->

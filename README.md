@@ -29,6 +29,10 @@ the live page once the testnet run has been made. The explorer's contract verifi
 says so too), so `artifacts/*.json` carries each contract's exact bytecode and compiler settings; anyone can recompile
 with `node tools/compile.mjs` and compare against `eth_getCode`.
 
+<!--AEVUM-ADDRESSES-->
+**Not deployed yet.** Every contract has been deployed in simulation by Aevum's own EVM, read-only ([`receipts/aevum-dryrun.json`](receipts/aevum-dryrun.json)). The addresses the run will create are predicted there from the deployer's nonce and checked against the chain afterwards. This block is rewritten from `runs/aevum.json` by `tools/aevum-go.mjs` when the run is made.
+<!--/AEVUM-ADDRESSES-->
+
 | | |
 |---|---|
 | Network | QDay Aevum Testnet, chain id `44005` (`0xabe5`) |

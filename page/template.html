@@ -58,6 +58,12 @@ mark{background:var(--mark);color:inherit;border-radius:3px}
 .limits{border-left:3px solid var(--bad);background:var(--bad-bg);padding:10px 14px;border-radius:0 8px 8px 0}
 svg text{fill:var(--ink);font:12px system-ui,sans-serif}svg .muted{fill:var(--muted)}svg .box{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
 svg .edge{stroke:var(--accent);stroke-width:2;fill:none}svg .edge.bad{stroke:var(--bad);stroke-dasharray:5 4}svg .lbl{font-size:11px}svg .big{font-weight:700;font-size:13px}
+.state{margin:0 0 14px}.state.pending{border-left:4px solid var(--warn)}.state.ok{border-left:4px solid var(--ok)}.state p{margin:.5em 0 0}
+.statehead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cta{margin:16px 0 4px;padding:14px 16px;border:1px solid var(--accent);border-radius:10px;background:var(--panel);box-shadow:var(--shadow)}
+.cta .btn{font-size:1.02em;padding:10px 16px}.cta p{margin:6px 0 0;color:var(--muted);font-size:.9em}
+.score{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}.score .pill{font-size:.95em;padding:3px 12px}
+td.verdictcell{white-space:nowrap;width:1%}
 footer{padding:26px 0 40px;color:var(--muted);font-size:.9em;border-top:1px solid var(--line)}
 @media (max-width:640px){.tl li{grid-template-columns:40px 1fr}.hero{padding-top:24px}nav.toc{display:none}}
 </style>
@@ -75,7 +81,12 @@ footer{padding:26px 0 40px;color:var(--muted);font-size:.9em;border-top:1px soli
 <div class="hero">
   <h1>An AI agent should pay only for checked work, and never pay an attacker.</h1>
   <p class="lead">Kar Trust Layer is settlement for agent commerce, built for <b>QDay Aevum testnet</b>. An agent with an <b>ERC-8004</b> identity takes a job from <b>Fallmarket</b> through a <b>session key</b> it cannot exceed. A worker delivers an answer made only of words copied from the job's sources. The <b>DocDec verifier</b> signs off, and the <b>FulfilmentGate</b> releases <b>tUSD8</b> only after the chain rebuilds the answer from the cited bytes of those sources and finds it identical. A prompt injection that tells the agent to pay someone else is refused by the chain, even when the agent obeys it.</p>
-  <div class="badges" id="badges"><span class="badge"><span class="dot warn"></span>loading the run…</span></div>
+  <div class="badges" id="badges">{{badges}}</div>
+  <div class="cta" id="heroRun">
+    <div class="btns" style="margin:0"><button class="btn" id="heroRunBtn" type="button">▶ Run the real compiled contracts in your browser</button><a class="btn ghost" href="#try">Try to break the verifier</a><a class="btn ghost" href="#run">See the recorded run</a></div>
+    <p>No wallet, no testnet, no keys: this page starts an Ethereum virtual machine in your browser, deploys the six contracts from the exact bytecode that goes to Aevum, and runs every step, the attacks included, in about ten seconds. Nothing leaves your machine.</p>
+    <noscript><p class="note">The in-browser run and the playgrounds need JavaScript. Everything else on this page, the recorded run included, is plain HTML.</p></noscript>
+  </div>
   <div class="grid g3" style="margin-top:14px">
     <div class="card"><b>The injection is refused</b><p class="meta">Steps S5 of <a href="#run">the run</a>: the agent's key signs "pay 0xBAD… 10,000"; two transactions revert on-chain (<code>RecipientNotAllowed</code>, <code>OverCap</code>); the attacker's balance stays 0.00. Code: <a href="https://github.com/sjgant80-hub/kar-trust-layer/blob/main/contracts/AgentAccount.sol">AgentAccount.executeSession</a>.</p></div>
     <div class="card"><b>The quote is re-checked on-chain</b><p class="meta"><code>release</code> hashes the sources against the root committed when the job opened, slices each cited byte range, joins them with single spaces, and reverts unless that equals the answer. Code: <a href="https://github.com/sjgant80-hub/kar-trust-layer/blob/main/contracts/FulfilmentGate.sol">FulfilmentGate._checkGrounded</a>.</p></div>
@@ -111,22 +122,23 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
 
 <section id="run">
   <h2>The run</h2>
-  <p class="sub" id="runsub">Loading…</p>
-  <div class="grid g3" id="kpis"></div>
+  <div id="aevum">{{aevum}}</div>
+  <p class="sub" id="runsub">{{runsub}}</p>
+  <div class="grid g3" id="kpis">{{kpis}}</div>
   <h3>Step by step</h3>
-  <ul class="tl" id="timeline"></ul>
+  <ul class="tl" id="timeline">{{timeline}}</ul>
   <h3>How it ended</h3>
   <div class="grid g2">
-    <div class="card scroll"><table id="final"></table></div>
-    <div class="card"><b>Checks the conductor made during the run</b><ul id="checks" style="padding-left:1.1em;margin:.4em 0 0"></ul></div>
+    <div class="card scroll"><table id="final">{{final}}</table></div>
+    <div class="card"><b>Checks the conductor made during the run</b><ul id="checks" style="padding-left:1.1em;margin:.4em 0 0">{{checks}}</ul></div>
   </div>
   <h3>The contracts</h3>
-  <div class="card scroll"><table id="contracts"></table></div>
+  <div class="card scroll"><table id="contracts">{{contracts}}</table></div>
 </section>
 
 <section id="browser">
-  <h2>Run it in your browser</h2>
-  <p class="sub">This loads an in-browser Shanghai EVM (the reference JavaScript implementation, ethereumjs), deploys the six contracts from the exact bytecode in <code>artifacts/</code> (the bytes that go to Aevum), and runs the same <code>lib/flow.mjs</code> that runs on Aevum. It takes a few seconds.</p>
+  <h2>Run it in your browser: the real compiled contracts</h2>
+  <p class="sub">This is the proof you can check yourself, today, with nothing but this page. It loads an in-browser Shanghai EVM (ethereumjs, the reference JavaScript implementation), deploys the six contracts from the exact bytecode in <code>artifacts/</code> (the bytes CI recompiles from source on every push, and the bytes that go to Aevum), and runs the same <code>lib/flow.mjs</code> that runs on Aevum: identities, the job, both attacks, the verdicts, the release and the refund. It takes about ten seconds.</p>
   <div class="btns"><button class="btn" id="runBtn" type="button">Run the whole flow here</button></div>
   <div class="log" id="runLog" aria-live="polite">Press the button. Each line is a transaction on the in-page chain.</div>
   <p id="runResult"></p>
@@ -144,17 +156,17 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
         <button class="btn ghost" type="button" data-preset="offq">Verbatim but off-question</button>
         <button class="btn ghost" type="button" data-preset="refuse">A refusal</button>
       </div>
-      <label for="vq">Question</label><input id="vq">
-      <label for="va">Answer (the worker may only copy)</label><textarea id="va"></textarea>
-      <label for="vc">Claims: source index and byte range [start, end)</label><textarea id="vc"></textarea>
+      <label for="vq">Question</label><input id="vq" value="{{vq}}">
+      <label for="va">Answer (the worker may only copy)</label><textarea id="va">{{va}}</textarea>
+      <label for="vc">Claims: source index and byte range [start, end)</label><textarea id="vc">{{vc}}</textarea>
       <div class="btns"><button class="btn ghost" type="button" id="readerBtn">Let the copy-only reader answer this question</button></div>
-      <div class="verdict" id="vout">…</div>
-      <div id="vwhy" class="meta"></div>
+      <div class="verdict {{vout.cls}}" id="vout">{{vout}}</div>
+      <div id="vwhy" class="meta">{{vwhy}}</div>
     </div>
     <div class="card">
       <h3>The sources, with the cited bytes marked</h3>
       <p class="meta">Three verbatim excerpts of the ERC-8004 spec (CC0). Their hashes are committed on-chain when the job opens.</p>
-      <div id="srcs"></div>
+      <div id="srcs">{{srcs}}</div>
     </div>
   </div>
   <div class="grid g2" style="margin-top:14px">
@@ -166,13 +178,13 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
       <label for="wa">Amount (tUSD8)</label><input id="wa" type="number" min="0" step="0.01" value="10000">
       <label for="ws">Already spent by this key (tUSD8)</label><input id="ws" type="number" min="0" step="0.01" value="1">
       <label><input type="checkbox" id="wr" style="width:auto"> the owner has revoked the key</label>
-      <div class="verdict" id="wout">…</div>
+      <div class="verdict {{wout.cls}}" id="wout">{{wout}}</div>
     </div>
     <div class="card">
       <h3>The immune screen</h3>
       <p class="meta">A tripwire on untrusted text (listings, deliverables, email). It is not the wall: the run deliberately signs the injected payment anyway, to prove the chain refuses it.</p>
-      <label for="it">Untrusted text</label><textarea id="it"></textarea>
-      <div class="verdict" id="iout">…</div>
+      <label for="it">Untrusted text</label><textarea id="it">{{it}}</textarea>
+      <div class="verdict {{iout.cls}}" id="iout">{{iout}}</div>
     </div>
   </div>
 </section>
@@ -184,15 +196,15 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
   <svg viewBox="0 0 980 470" width="100%" role="img" aria-labelledby="dgT dgD" style="min-width:720px">
     <title id="dgT">How a job is paid</title><desc id="dgD">The agent's session key signs; the smart account enforces the wall; the gate escrows; the worker delivers; the DocDec verifier signs in the ERC-8004 Validation Registry; the gate re-checks the quote and pays the worker; the attacker is refused.</desc>
     <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--accent)"/></marker><marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--bad)"/></marker></defs>
-    <rect class="box" x="20" y="30" width="190" height="78" rx="10"/><text x="34" y="56" class="big">Kar buyer agent</text><text x="34" y="76" class="muted">ERC-8004 identity #<tspan id="d-buyer">1</tspan></text><text x="34" y="94" class="muted">holds only a session key</text>
-    <rect class="box" x="290" y="30" width="210" height="78" rx="10"/><text x="304" y="56" class="big">AgentAccount (the wall)</text><text x="304" y="76" class="muted">cap <tspan id="d-cap">2.00</tspan> tUSD8 · 24 h</text><text x="304" y="94" class="muted">allowlist: the gate only</text>
+    <rect class="box" x="20" y="30" width="190" height="78" rx="10"/><text x="34" y="56" class="big">Kar buyer agent</text><text x="34" y="76" class="muted">ERC-8004 identity #<tspan id="d-buyer">{{d-buyer}}</tspan></text><text x="34" y="94" class="muted">holds only a session key</text>
+    <rect class="box" x="290" y="30" width="210" height="78" rx="10"/><text x="304" y="56" class="big">AgentAccount (the wall)</text><text x="304" y="76" class="muted">cap <tspan id="d-cap">{{d-cap}}</tspan> tUSD8 · 24 h</text><text x="304" y="94" class="muted">allowlist: the gate only</text>
     <rect class="box" x="590" y="30" width="200" height="78" rx="10"/><text x="604" y="56" class="big">FulfilmentGate</text><text x="604" y="76" class="muted">escrow per job</text><text x="604" y="94" class="muted">pays only on proof</text>
     <rect class="box" x="590" y="190" width="200" height="78" rx="10"/><text x="604" y="216" class="big">Fallmarket listing</text><text x="604" y="236" class="muted">price <tspan id="d-price">1.00</tspan> tUSD8</text><text x="604" y="254" class="muted">validator: DocDec</text>
-    <rect class="box" x="290" y="190" width="210" height="78" rx="10"/><text x="304" y="216" class="big">Worker agent #<tspan id="d-worker">2</tspan></text><text x="304" y="236" class="muted">copies a passage +</text><text x="304" y="254" class="muted">its byte offsets</text>
-    <rect class="box" x="20" y="190" width="190" height="78" rx="10"/><text x="34" y="216" class="big">DocDec verifier #<tspan id="d-val">3</tspan></text><text x="34" y="236" class="muted">verbatim + on-question</text><text x="34" y="254" class="muted">signs PASS / FAIL</text>
+    <rect class="box" x="290" y="190" width="210" height="78" rx="10"/><text x="304" y="216" class="big">Worker agent #<tspan id="d-worker">{{d-worker}}</tspan></text><text x="304" y="236" class="muted">copies a passage +</text><text x="304" y="254" class="muted">its byte offsets</text>
+    <rect class="box" x="20" y="190" width="190" height="78" rx="10"/><text x="34" y="216" class="big">DocDec verifier #<tspan id="d-val">{{d-val}}</tspan></text><text x="34" y="236" class="muted">verbatim + on-question</text><text x="34" y="254" class="muted">signs PASS / FAIL</text>
     <rect class="box" x="20" y="350" width="190" height="78" rx="10"/><text x="34" y="376" class="big">Validation Registry</text><text x="34" y="396" class="muted">ERC-8004, on-chain</text><text x="34" y="414" class="muted">response 0..100</text>
-    <rect class="box" x="590" y="350" width="200" height="78" rx="10"/><text x="604" y="376" class="big">Worker's agentWallet</text><text x="604" y="396" class="muted">paid <tspan id="d-paid">1.00</tspan> tUSD8</text><text x="604" y="414" class="muted mono" id="d-reltx">tx …</text>
-    <rect class="box" x="840" y="30" width="125" height="78" rx="10" style="stroke:var(--bad)"/><text x="852" y="56" class="big" style="fill:var(--bad)">0xBAD…</text><text x="852" y="76" class="muted">asked: 10,000</text><text x="852" y="94" class="muted">got: <tspan id="d-att">0.00</tspan></text>
+    <rect class="box" x="590" y="350" width="200" height="78" rx="10"/><text x="604" y="376" class="big">Worker's agentWallet</text><text x="604" y="396" class="muted">paid <tspan id="d-paid">{{d-paid}}</tspan> tUSD8</text><text x="604" y="414" class="muted mono" id="d-reltx">{{d-reltx}}</text>
+    <rect class="box" x="840" y="30" width="125" height="78" rx="10" style="stroke:var(--bad)"/><text x="852" y="56" class="big" style="fill:var(--bad)">0xBAD…</text><text x="852" y="76" class="muted">asked: 10,000</text><text x="852" y="94" class="muted">got: <tspan id="d-att">{{d-att}}</tspan></text>
     <path class="edge" d="M210,69 L288,69" marker-end="url(#ar)"/><text x="218" y="62" class="lbl">signs</text>
     <path class="edge" d="M500,69 L588,69" marker-end="url(#ar)"/><text x="506" y="62" class="lbl">escrow <tspan id="d-esc">1.00</tspan></text>
     <path class="edge bad" d="M395,30 C395,4 900,4 902,28" marker-end="url(#arb)"/><text x="560" y="14" class="lbl" style="fill:var(--bad)">injected payment: REFUSED on-chain (RecipientNotAllowed, OverCap)</text>
@@ -248,7 +260,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
     <tr><td>Policy</td><td><code>sdk/policy.mjs</code></td><td>predicts the wall's verdict; flags injected payment text</td><td><code>test/kernels.test.mjs</code>, run checks</td></tr>
     <tr><td>Conductor</td><td><code>lib/flow.mjs</code></td><td>the spine on any chain; every refusal must be the expected one</td><td><code>test/flow.test.mjs</code></td></tr>
   </table></div>
-  <p class="meta">Mutation gate: <a href="https://github.com/sjgant80-hub/witness">witness</a> (pinned v0.7) flips operators in every file and runs that file's tests; a Solidity pass adds the operators witness does not flip; every kernel is fuzzed with hostile input. A surviving mutant fails CI. <span id="gateNote"></span></p>
+  <p class="meta">Mutation gate: <a href="https://github.com/sjgant80-hub/witness">witness</a> (pinned v0.7) flips operators in every file and runs that file's tests; a Solidity pass adds the operators witness does not flip; every kernel is fuzzed with hostile input. A surviving mutant fails CI. <span id="gateNote">{{gateNote}}</span></p>
 </section>
 
 <section id="business">
@@ -269,9 +281,9 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
       <label for="cj">Agent-bought deliverables a month (your number)</label><input id="cj" type="number" min="0" value="2000">
       <label for="cm">Minutes a person spends checking one against its sources before approving payment (your number)</label><input id="cm" type="number" min="0" step="0.5" value="4">
       <label for="cr">Hourly rate, GBP (default: the legal floor)</label><input id="cr" type="number" min="0" step="0.01" value="12.71">
-      <p class="meta" id="csrc"></p>
+      <p class="meta" id="csrc">{{csrc}}</p>
     </div>
-    <div class="card"><div class="kpi" id="cy">…<small>a year of staff time, at the rate above</small></div><p id="ch"></p><p class="meta">Computed by <code>sdk/cost.mjs</code> (gated). At the National Living Wage and before employer NI and pension, this is a floor. On-chain gas for the whole recorded run, measured: <b id="cgas">…</b>.</p></div>
+    <div class="card"><div class="kpi" id="cy">{{cy}}<small>a year of staff time, at the rate above</small></div><p id="ch">{{ch}}</p><p class="meta">Computed by <code>sdk/cost.mjs</code> (gated) from the three numbers on the left; the figure shown is the worked example for the defaults, and it changes as you type. At the National Living Wage and before employer NI and pension, this is a floor. On-chain gas, measured: <b id="cgas">{{cgas}}</b>.</p></div>
   </div>
 
   <h3>Today, against the trust layer</h3>
@@ -307,7 +319,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
     <tr><td><b>What if the session key is stolen?</b></td><td>The thief gets what the agent had: the remaining cap, to allowlisted recipients only, until expiry. The owner revokes the key in one transaction (step S11 of the run shows the next attempt refused).</td></tr>
     <tr><td><b>What if the verifier is compromised?</b></td><td>It cannot get a reworded answer paid: the chain re-checks the words. It could pass a verbatim copy that is off the question, the one judgement the chain cannot re-run; that is bounded by the job's price and recorded against its identity.</td></tr>
   </table></div>
-  <div class="card" style="margin-top:14px"><h3>The case for the board</h3><p>Agents that spend money are coming whether or not a firm is ready. This puts the rule where it cannot be talked out of: the chain. Payment waits for proof, a cap holds against any prompt, and every payment carries its own evidence. It is open source and tested by mutation; <span id="boardTail">it runs end to end on a Shanghai EVM and in your browser, built for QDay Aevum testnet.</span></p></div>
+  <div class="card" style="margin-top:14px"><h3>The case for the board</h3><p>Agents that spend money are coming whether or not a firm is ready. This puts the rule where it cannot be talked out of: the chain. Payment waits for proof, a cap holds against any prompt, and every payment carries its own evidence. It is open source and tested by mutation; <span id="boardTail">{{boardTail}}</span></p></div>
 </section>
 
 <section id="criteria">
@@ -315,7 +327,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
   <div class="card scroll"><table>
     <tr><th>Criterion</th><th>Where it is met</th></tr>
     <tr><td>UX</td><td>this page: one-click in-browser run, live verifier, plain-language steps; the CLI prints every step</td></tr>
-    <tr><td>A clear demo with explorer links</td><td id="critDemo"><a href="#run">The run</a>: every transaction with its hash; once the Aevum testnet run is recorded, each links to explorer-test.qday.info</td></tr>
+    <tr><td>A clear demo with explorer links</td><td id="critDemo">{{critDemo}}</td></tr>
     <tr><td>Docs</td><td><a href="https://github.com/sjgant80-hub/kar-trust-layer#readme">README</a>, <a href="#blueprint">architecture</a>, <a href="#docs">addresses, env vars, repro, Docker</a></td></tr>
     <tr><td>Innovation</td><td>fulfilment-gated settlement: the chain itself re-checks that the paid answer is made of the sources' own words</td></tr>
     <tr><td>Technical</td><td>ERC-8004 identity + validation, a smart account with session keys (cap, expiry, allowlist), ERC-1271 wallet binding, Shanghai-clean build</td></tr>
@@ -331,7 +343,20 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
   <p>This build moves both rules into contracts. Payment is <b>fulfilment-gated</b>: the escrow opens against a commitment to the question and to the exact source documents, and closes only when two independent checks agree. The first is the verifier's signed verdict in the ERC-8004 Validation Registry. The second is the chain's own re-run of the part of that verdict it can compute: that the answer is exactly the cited byte ranges of the committed sources. The verifier's judgement (does the copied text address the question?) cannot be re-run on-chain, so it is signed, attributable and recorded against the verifier's identity, and a market rule removes workers whose record falls.</p>
   <p>Spending is <b>scoped at the key</b>. The agent never holds the account's owner key. It holds a session key whose cap, expiry and allowlist live in the account, and every action it signs is checked against them before a token moves. The run tests this the hard way: it assumes the agent obeyed the injection and signed the payment, and shows the chain refusing it.</p>
   <h3>DocDec, measured</h3>
-  <p>The verifier rule here is DocDec's verbatim-grounding property: every answer's exact words sit at checkable offsets (DocDec v2 measured this as C6, 955/955). DocDec v2's own benchmark also measured: finding the right passage 83.0% against 66.8% for a tuned-cosine baseline (C1); decision accuracy 70.2% against 51.9% (C2a); multi-hop source pairing 66.3% against 52.9% (C3); holding at 9× the corpus (C4). It failed three of its pre-registered tests: the matched-recall refusal rule (C2b), freshness at 79% against a 95% bar (C5), and memory reuse (C7). Those are DocDec's benchmark results, published on <a href="https://sjgant80-hub.github.io/docdecdemo/">the DocDec demo</a>; this build does not re-claim them. Here, the worker is a copy-only reader and the verifier applies the verbatim and on-question rule.</p>
+  <p>The verifier rule here is DocDec's verbatim-grounding property: every answer's exact words sit at checkable offsets. DocDec v2 pre-registered eight claims before its benchmark ran, and scored them as follows.</p>
+  <div class="score" aria-label="DocDec v2 scoreboard"><span class="pill ok">5 PASS</span><span class="pill bad">3 FAIL</span><span class="pill warn">8 pre-registered claims</span></div>
+  <div class="card scroll"><table>
+    <tr><th>Result</th><th>Claim</th><th>What was measured</th></tr>
+    <tr><td class="verdictcell"><span class="pill ok">PASS</span></td><td>C6</td><td>verbatim offsets: every answer's exact words at checkable offsets, 955/955</td></tr>
+    <tr><td class="verdictcell"><span class="pill ok">PASS</span></td><td>C1</td><td>finding the right passage: 83.0% against 66.8% for a tuned-cosine baseline</td></tr>
+    <tr><td class="verdictcell"><span class="pill ok">PASS</span></td><td>C2a</td><td>decision accuracy: 70.2% against 51.9%</td></tr>
+    <tr><td class="verdictcell"><span class="pill ok">PASS</span></td><td>C3</td><td>multi-hop source pairing: 66.3% against 52.9%</td></tr>
+    <tr><td class="verdictcell"><span class="pill ok">PASS</span></td><td>C4</td><td>holding at 9× the corpus</td></tr>
+    <tr><td class="verdictcell"><span class="pill bad">FAIL</span></td><td>C2b</td><td>the matched-recall refusal rule</td></tr>
+    <tr><td class="verdictcell"><span class="pill bad">FAIL</span></td><td>C5</td><td>freshness at 79% against a 95% bar</td></tr>
+    <tr><td class="verdictcell"><span class="pill bad">FAIL</span></td><td>C7</td><td>memory reuse</td></tr>
+  </table></div>
+  <p>Those are DocDec's benchmark results, published on <a href="https://sjgant80-hub.github.io/docdecdemo/">the DocDec demo</a>; this build does not re-claim them. The three failures stay on the record as measured. Here, the worker is a copy-only reader and the verifier applies the verbatim and on-question rule.</p>
   <div class="limits"><b>What this proves, and what it does not.</b> It proves the paid answer's words sit at their cited byte offsets in the sources the buyer committed to, and that the named verifier signed off. It does not prove the answer is the best one, that the sources are true, or that the worker understood them. Offsets are UTF-8 bytes. At release, the cited sources go on-chain as calldata. The explorer's contract verifier is not working yet, so the exact bytecode is published in <code>artifacts/</code> for anyone to recompile and compare.</div>
 </section>
 
@@ -342,10 +367,10 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
       <tr><td>Network</td><td>QDay Aevum Testnet</td></tr><tr><td>Chain id</td><td><code>44005</code></td></tr>
       <tr><td>RPC</td><td><code>https://rpc-test.qday.info</code></td></tr><tr><td>Explorer</td><td><a href="https://explorer-test.qday.info">explorer-test.qday.info</a></td></tr>
       <tr><td>tUSD8</td><td><code class="mono">0x456569838f1d43009A91ebA4263147Afd7233483</code> (6 decimals)</td></tr><tr><td>EVM</td><td>Shanghai</td></tr></table></div>
-    <div class="card"><h3>Run on Aevum</h3><pre>export KAR_PRINCIPAL_KEY=0x…   # deploys, relays; tQDAY + 2 tUSD8
-export KAR_WORKER_KEY=0x…      # gets gas from the principal
-export KAR_VALIDATOR_KEY=0x…   # gets gas from the principal
-export KAR_SESSION_KEY=0x…     # only signs
+    <div class="card"><h3>Run on Aevum</h3><pre>export KAR_PRINCIPAL_KEY=0x&lt;your TEST key&gt;   # deploys, relays; needs 0.1 tQDAY + 2 tUSD8
+export KAR_WORKER_KEY=0x&lt;your TEST key&gt;      # gets gas from the principal
+export KAR_VALIDATOR_KEY=0x&lt;your TEST key&gt;   # gets gas from the principal
+export KAR_SESSION_KEY=0x&lt;your TEST key&gt;     # only signs
 node flow.mjs --network aevum  # writes runs/aevum.json</pre><p class="meta">Test keys only. The CLI refuses the public local keys on a real network and never prints a key.</p></div>
     <div class="card"><h3>Docker</h3><pre>docker build -t kar-trust-layer .
 docker run --rm kar-trust-layer
@@ -364,11 +389,9 @@ docker run --rm --env-file .env.aevum kar-trust-layer --network aevum</pre></div
 <script type="module">
 /*KERNELS*/
 
+// Everything on this page was already rendered when it was built (tools/build-page.mjs, with the functions
+// above). This script only makes it interactive: the playgrounds call the same functions as you type.
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const short = (h) => (h ? h.slice(0, 10) + '…' + h.slice(-6) : '');
-const fmt2 = (n) => Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const STEP_TITLES = { S0: 'Deploy', S1: 'ERC-8004 identities', S2: 'Fund and scope the key', S3: 'Fallmarket listing', S4: 'Take the job', S5: 'The injection', S6: 'The work', S7: 'The verdict', S8: 'Release on proof', S9: 'An ungrounded deliverable', S10: 'Metabolism', S11: 'Revoke' };
 
 // theme
 (() => {
@@ -388,90 +411,18 @@ async function getJSON(path) {
   return r.json();
 }
 
-let JOB = null;
-let TRAIL = null;
-
-function txLink(trail, hash) {
-  if (!hash) return '';
-  return trail.explorer ? `<a class="mono" href="${trail.explorer}/tx/${hash}" target="_blank" rel="noopener">${short(hash)}</a>` : `<span class="mono" title="${hash}">${short(hash)}</span>`;
-}
-function addrLink(trail, a) {
-  return trail.explorer ? `<a class="mono" href="${trail.explorer}/address/${a}" target="_blank" rel="noopener">${a}</a>` : `<span class="mono">${a}</span>`;
-}
-function describeEvents(s) {
-  if (s.error) return `refused on-chain: <b>${esc(s.error.name)}</b>${s.error.args && s.error.args.length ? ' (' + esc(s.error.args.map(String).join(', ')) + ')' : ''}`;
-  const names = (s.events || []).map((e) => e.name).filter(Boolean);
-  return names.length ? 'events: ' + esc([...new Set(names)].join(', ')) : '';
-}
-
-function renderTrail(trail) {
-  TRAIL = trail;
-  const onAevum = trail.network === 'aevum';
-  const refused = trail.steps.filter((s) => s.status === 'reverted');
-  const passed = trail.checks.filter((c) => c.ok).length;
-  const gas = trail.steps.reduce((a, s) => a + Number(s.gasUsed || 0), 0);
-  $('badges').innerHTML = [
-    `<span class="badge"><span class="dot ${onAevum ? 'ok' : 'warn'}"></span>${onAevum ? 'QDay Aevum testnet · chain 44005' : 'local replay (Shanghai EVM)'}</span>`,
-    `<span class="badge"><span class="dot ok"></span>${trail.steps.length} transactions</span>`,
-    `<span class="badge"><span class="dot bad"></span>${refused.length} refused on-chain, as designed</span>`,
-    `<span class="badge"><span class="dot ${passed === trail.checks.length ? 'ok' : 'bad'}"></span>${passed}/${trail.checks.length} checks</span>`,
-    `<span class="badge"><span class="dot ${trail.final.balances.attacker === '0.00' ? 'ok' : 'bad'}"></span>attacker received ${trail.final.balances.attacker}</span>`,
-  ].join('');
-  $('runsub').innerHTML = onAevum
-    ? `The recorded run on QDay Aevum testnet, ${esc(trail.started.slice(0, 16).replace('T', ' '))} UTC, from commit <code>${esc((trail.commit || '').slice(0, 7))}</code>. Click any hash to open it on the explorer.`
-    : `<span class="note" style="display:block">This is the recorded <b>local</b> run (an in-process Shanghai EVM with a mock tUSD8). The Aevum testnet run replaces it here as soon as it is made; you can reproduce this one in your browser below.</span>`;
-  $('kpis').innerHTML = [
-    ['Escrowed and released', trail.final.balances.worker + ' tUSD8', 'to the worker, after PASS + re-check'],
-    ['Refunded on FAIL', '1.00 tUSD8', 'the reworded answer was never paid'],
-    ['Injected payment', '10,000 tUSD8 asked', 'paid: ' + trail.final.balances.attacker],
-    ['Gas for the whole run', gas.toLocaleString('en-GB'), 'units, ' + trail.steps.length + ' transactions'],
-  ].map(([t, v, s]) => `<div class="card"><div class="meta">${t}</div><div class="kpi">${esc(v)}<small>${esc(s)}</small></div></div>`).join('');
-  let last = '';
-  $('timeline').innerHTML = trail.steps.map((s) => {
-    const head = s.step !== last ? `<div class="meta" style="font-weight:700;color:var(--ink)">${esc(STEP_TITLES[s.step] || s.step)}</div>` : '';
-    last = s.step;
-    const pill = s.status === 'success' ? '<span class="pill ok">ok</span>' : '<span class="pill bad">refused</span>';
-    return `<li class="${s.status === 'success' ? '' : 'refused'}"><div class="st">${esc(s.step)}</div><div class="what">${head}<b>${esc(s.label)}</b> ${pill}<div class="meta">${esc(s.actor)} · ${txLink(trail, s.hash)} · block ${esc(s.block)} · gas ${esc(s.gasUsed)}${describeEvents(s) ? ' · ' + describeEvents(s) : ''}</div></div></li>`;
-  }).join('');
-  const b = trail.final.balances;
-  $('final').innerHTML = `<tr><th>Who</th><th class="num">tUSD8</th></tr>
-    <tr><td>Worker (paid for the grounded answer)</td><td class="num">${b.worker}</td></tr>
-    <tr><td>Agent account (refunded for the reworded one)</td><td class="num">${b.agentAccount}</td></tr>
-    <tr><td>FulfilmentGate (nothing stranded)</td><td class="num">${b.gate}</td></tr>
-    <tr><td>0xBAD… (the injection's address)</td><td class="num">${b.attacker}</td></tr>
-    <tr><td>Session key: spent of cap</td><td class="num">${trail.final.session.spent} / ${trail.final.session.cap} · ${trail.final.session.active ? 'active' : 'revoked'}</td></tr>
-    <tr><td>Worker's verified record</td><td class="num">${trail.final.workerValidations.count} verdicts, average ${trail.final.workerValidations.average}/100</td></tr>
-    <tr><td>Listing</td><td class="num">${trail.final.listingLive ? 'live' : 'pruned by the market'}</td></tr>`;
-  $('checks').innerHTML = trail.checks.map((c) => `<li>${c.ok ? '✓' : '✗'} ${esc(c.name)}</li>`).join('');
-  $('contracts').innerHTML = '<tr><th>Contract</th><th>Address</th></tr>' + Object.entries(trail.contracts).map(([n, a]) => `<tr><td>${esc(n)}</td><td>${addrLink(trail, a)}</td></tr>`).join('') +
-    `<tr><td>Agents</td><td>buyer #${trail.ids.buyerAgentId}, worker #${trail.ids.workerAgentId}, DocDec verifier #${trail.ids.validatorAgentId}; listing #${trail.ids.listingId}; jobs #${trail.ids.job1} (paid), #${trail.ids.job2} (refunded)</td></tr>`;
-  // diagram, traced from the run
-  $('d-buyer').textContent = trail.ids.buyerAgentId;
-  $('d-worker').textContent = trail.ids.workerAgentId;
-  $('d-val').textContent = trail.ids.validatorAgentId;
-  $('d-cap').textContent = trail.final.session.cap;
-  $('d-paid').textContent = b.worker;
-  $('d-att').textContent = b.attacker;
-  const rel = trail.steps.find((s) => s.step === 'S8');
-  if (rel) $('d-reltx').textContent = 'tx ' + short(rel.hash);
-  $('cgas').textContent = gas.toLocaleString('en-GB') + ' gas units for all ' + trail.steps.length + ' transactions (both jobs, both attacks, deploys included)';
-  if (onAevum) {
-    $('boardTail').textContent = 'it is running on QDay Aevum testnet today: every step of the run above is a transaction you can open on the explorer.';
-    $('critDemo').innerHTML = '<a href="#run">The run</a>: every transaction linked to explorer-test.qday.info';
-  }
-}
+const PAGE = JSON.parse($('pageData').textContent);
+const JOB = PAGE.job;
+const TRAIL = PAGE.trail;
 
 // ── the verifier playground ──────────────────────────────────────────────────
 function presets() {
-  const t = TRAIL && TRAIL.deliverables;
-  const paid = t ? t.job1 : readAnswer(JOB.question, JOB.sources.map((s) => s.text));
-  const rew = t ? t.job2 : { answer: 'In short, ' + paid.answer, claims: paid.claims, question: JOB.question };
-  const q2 = (t && t.job2.question) || JOB.question2;
-  const off = readAnswer('late fees owner address', JOB.sources.map((s) => s.text));
+  const t = TRAIL.deliverables;
+  const off = t.job1;
   return {
-    paid: { q: (t && t.job1.question) || JOB.question, a: paid.answer, c: paid.claims },
-    reworded: { q: q2, a: rew.answer, c: rew.claims },
-    offq: { q: JOB.question2, a: paid.answer, c: paid.claims },
+    paid: { q: t.job1.question, a: t.job1.answer, c: t.job1.claims },
+    reworded: { q: t.job2.question || JOB.question2, a: t.job2.answer, c: t.job2.claims },
+    offq: { q: JOB.question2, a: off.answer, c: off.claims },
     refuse: { q: 'What is the capital of France?', a: '', c: [] },
   };
 }
@@ -479,34 +430,15 @@ function setPreset(name) {
   const p = presets()[name];
   $('vq').value = p.q;
   $('va').value = p.a;
-  $('vc').value = JSON.stringify(p.c.map((c) => ({ doc: c.doc, start: c.start, end: c.end })));
+  $('vc').value = claimsText(p.c);
   verifyNow();
 }
-function markSources(claims) {
-  const enc = new TextEncoder();
-  const dec = new TextDecoder();
-  $('srcs').innerHTML = JOB.sources.map((s, i) => {
-    const bytes = enc.encode(s.text);
-    const mine = (claims || []).filter((c) => c && c.doc === i && Number.isInteger(c.start) && Number.isInteger(c.end) && c.start < c.end && c.end <= bytes.length).sort((a, b) => a.start - b.start);
-    let html = '';
-    let at = 0;
-    for (const c of mine) {
-      if (c.start < at) continue;
-      html += esc(dec.decode(bytes.subarray(at, c.start))) + '<mark>' + esc(dec.decode(bytes.subarray(c.start, c.end))) + '</mark>';
-      at = c.end;
-    }
-    html += esc(dec.decode(bytes.subarray(at)));
-    return `<div class="meta" style="margin-top:8px">source ${i}: ${esc(s.title)} · ${bytes.length} bytes</div><div class="src">${html}</div>`;
-  }).join('');
-}
 function verifyNow() {
-  let claims;
-  try { claims = JSON.parse($('vc').value || '[]'); } catch { claims = 'unreadable'; }
-  const r = verifyDeliverable({ question: $('vq').value, sources: JOB.sources.map((s) => s.text), deliverable: { answer: $('va').value, claims } });
-  $('vout').className = 'verdict ' + r.verdict;
-  $('vout').textContent = `${r.verdict} · ${r.response}/100 · ${r.reason}`;
-  $('vwhy').innerHTML = r.rebuilt !== undefined ? 'The cited bytes actually say: <code>' + esc(r.rebuilt) + '</code>' : (r.coverage !== undefined ? 'Question coverage: ' + Math.round(r.coverage * 100) + '%' : '');
-  markSources(Array.isArray(claims) ? claims : []);
+  const v = verifyView($('vq').value, JOB.sources, $('va').value, $('vc').value);
+  $('vout').className = 'verdict ' + v.cls;
+  $('vout').textContent = v.text;
+  $('vwhy').innerHTML = v.why;
+  $('srcs').innerHTML = v.srcs;
 }
 ['vq', 'va', 'vc'].forEach((id) => $(id).addEventListener('input', verifyNow));
 document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => setPreset(b.dataset.preset)));
@@ -518,43 +450,40 @@ $('readerBtn').addEventListener('click', () => {
 });
 
 // ── the wall playground ──────────────────────────────────────────────────────
-const TOKEN = '0x456569838f1d43009A91ebA4263147Afd7233483';
 function wallNow() {
-  const GATE = (TRAIL && TRAIL.contracts.FulfilmentGate) || '0x0000000000000000000000000000000000000001';
-  const units = (x) => BigInt(Math.round(Number(x || 0) * 1e6));
-  const target = { gate: GATE, bad: '0xBAD000000000000000000000000000000000BaD0', token: TOKEN }[$('wt').value];
-  const kind = $('wt').value === 'gate' ? KIND_CALL : ($('wt').value === 'token' ? KIND_CALL : KIND_TRANSFER);
-  const session = { cap: units(2), spent: units($('ws').value), expiry: 2n ** 40n, active: !$('wr').checked, allowlist: $('wt').value === 'token' ? [GATE, TOKEN] : [GATE] };
-  const r = checkSessionAction(session, { kind, target, amount: units($('wa').value), dataLength: kind === KIND_CALL ? 164 : 0, deadline: 2n ** 40n, signerOk: true, token: TOKEN }, 1);
-  const why = { RecipientNotAllowed: 'that address is not on the key\'s allowlist', OverCap: 'it would take the key past its 2.00 tUSD8 cap', SessionNotActive: 'the owner revoked this key', TokenCallForbidden: 'a session may never call the token contract directly (that would bypass the allowlist), even if someone allowlisted it', Malformed: 'the input is not a number' };
-  $('wout').className = 'verdict ' + (r.ok ? 'PASS' : 'FAIL');
-  $('wout').textContent = r.ok ? 'The chain would execute this.' : `Refused on-chain: ${r.error}, because ${why[r.error] || r.error}.`;
+  const r = wallView({ to: $('wt').value, amount: $('wa').value, spent: $('ws').value, revoked: $('wr').checked }, TRAIL.contracts.FulfilmentGate);
+  $('wout').className = 'verdict ' + r.cls;
+  $('wout').textContent = r.text;
 }
 ['wt', 'wa', 'ws', 'wr'].forEach((id) => $(id).addEventListener('input', wallNow));
 
+// ── the immune screen ────────────────────────────────────────────────────────
 function screenNow() {
-  const r = screenInjection($('it').value);
-  $('iout').className = 'verdict ' + (r.flagged ? 'FAIL' : 'PASS');
-  $('iout').textContent = r.flagged ? 'Flagged: ' + r.reasons.join('; ') + (r.addresses.length ? ' · addresses: ' + r.addresses.join(', ') : '') : 'Nothing flagged.';
+  const r = screenView($('it').value);
+  $('iout').className = 'verdict ' + r.cls;
+  $('iout').textContent = r.text;
 }
 $('it').addEventListener('input', screenNow);
 
 // ── cost ─────────────────────────────────────────────────────────────────────
 function costNow() {
-  const r = staffTime({ jobsPerMonth: $('cj').value, minutesPerCheck: $('cm').value, hourlyRate: $('cr').value === '' ? undefined : $('cr').value });
-  $('csrc').textContent = 'Floor rate source: ' + NLW_SOURCE + '.';
-  if (!r) { $('cy').firstChild.textContent = '—'; $('ch').textContent = 'Enter non-negative numbers.'; return; }
-  $('cy').firstChild.textContent = '£' + fmt2(r.perYear);
-  $('ch').textContent = `${fmt2(r.hoursPerMonth)} hours a month of checking deliverables against sources, at £${fmt2(r.rate)} an hour: £${fmt2(r.perMonth)} a month.`;
+  const r = costView({ jobs: $('cj').value, minutes: $('cm').value, rate: $('cr').value });
+  $('csrc').textContent = r.src;
+  $('cy').firstChild.textContent = r.kpi;
+  $('ch').textContent = r.text;
 }
 ['cj', 'cm', 'cr'].forEach((id) => $(id).addEventListener('input', costNow));
 
 // ── run it in the browser ────────────────────────────────────────────────────
-$('runBtn').addEventListener('click', async () => {
+async function runHere() {
   const btn = $('runBtn');
+  const hero = $('heroRunBtn');
+  if (btn.disabled) return;
   btn.disabled = true;
+  hero.disabled = true;
   const log = $('runLog');
   log.textContent = 'Loading the in-browser EVM and the six contracts…\n';
+  $('runResult').textContent = '';
   const t0 = performance.now();
   try {
     const names = ['AgentIdentityRegistry', 'ValidationRegistry', 'Fallmarket', 'AgentAccount', 'FulfilmentGate', 'MockUSD8'];
@@ -563,36 +492,22 @@ $('runBtn').addEventListener('click', async () => {
     const trail = await mod.runInBrowser({ art, job: JOB, onLog: (l) => { log.textContent += l + '\n'; log.scrollTop = log.scrollHeight; } });
     const ok = trail.checks.filter((c) => c.ok).length;
     const refused = trail.steps.filter((s) => s.status === 'reverted').map((s) => s.error.name).join(', ');
-    $('runResult').innerHTML = `<span class="pill ok">done</span> ${trail.steps.length} transactions in ${((performance.now() - t0) / 1000).toFixed(1)} s on the in-page chain; ${ok}/${trail.checks.length} checks passed; refused on-chain: ${esc(refused)}; attacker received ${trail.final.balances.attacker}.`;
+    $('runResult').innerHTML = `<span class="pill ${ok === trail.checks.length ? 'ok' : 'bad'}">done</span> ${trail.steps.length} transactions in ${((performance.now() - t0) / 1000).toFixed(1)} s on the in-page chain; ${ok}/${trail.checks.length} checks passed; refused on-chain: ${esc(refused)}; attacker received ${esc(trail.final.balances.attacker)}.`;
   } catch (e) {
-    $('runResult').innerHTML = `<span class="pill bad">failed</span> ${esc(e.message)}`;
+    $('runResult').innerHTML = `<span class="pill bad">failed</span> ${esc(e.message)}. The recorded run above is unaffected; reload and try again, or run it yourself with <code>node flow.mjs --network local</code>.`;
   } finally {
     btn.disabled = false;
+    hero.disabled = false;
   }
+}
+$('runBtn').addEventListener('click', runHere);
+$('heroRunBtn').addEventListener('click', () => {
+  $('browser').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  runHere();
 });
-
-// ── load ─────────────────────────────────────────────────────────────────────
-(async () => {
-  try {
-    JOB = await getJSON('fixtures/job.json');
-    $('it').value = JOB.injection;
-    let index = { aevum: false };
-    try { index = await getJSON('runs/index.json'); } catch {}
-    const trail = await getJSON(index.aevum ? 'runs/aevum.json' : 'runs/local.json');
-    renderTrail(trail);
-  } catch (e) {
-    $('badges').innerHTML = `<span class="badge"><span class="dot bad"></span>could not load the run: ${esc(e.message)}</span>`;
-  }
-  if (JOB) { setPreset('paid'); screenNow(); }
-  wallNow();
-  costNow();
-  try {
-    const g = await getJSON('receipts/mutation-summary.json');
-    $('gateNote').textContent = g.text;
-  } catch {}
-})();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
+<script type="application/json" id="pageData">{{pageData}}</script>
 </body>
 </html>

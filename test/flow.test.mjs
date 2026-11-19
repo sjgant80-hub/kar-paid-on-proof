@@ -54,3 +54,21 @@ test('the Shanghai check catches Cancun opcodes, skips PUSH data, and strips the
   assert.deepEqual([...stripMetadata(Buffer.from('00', 'hex'))], [0]);
   assert.deepEqual([...stripMetadata(Buffer.from('00ff00', 'hex'))], [0, 0xff, 0]);
 });
+
+test('a run that stops part-way keeps its partial trail on the error, with the reason', async () => {
+  const art = await artifacts();
+  const chain = await createLocalChain({ abis: Object.values(art).map((a) => a.abi), fund: [LOCAL_KEYS.principal] });
+  let sends = 0;
+  const send = chain.send.bind(chain);
+  chain.send = async (...a) => {
+    if (++sends === 6) throw new Error('the node went away');
+    return send(...a);
+  };
+  await assert.rejects(runFlow(chain, { keys: LOCAL_KEYS, art, job: loadJob() }), (e) => {
+    assert.match(e.message, /the node went away/);
+    assert.ok(e.trail && e.trail.steps.length >= 5, 'partial trail kept');
+    for (const s of e.trail.steps) assert.match(s.hash, /^0x[0-9a-f]{64}$/);
+    assert.match(e.trail.failed.error, /the node went away/);
+    return true;
+  });
+});

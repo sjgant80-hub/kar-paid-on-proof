@@ -22,10 +22,10 @@ jobs:
         run: git diff --exit-code artifacts/
       - name: tests
         run: node --test --test-concurrency=1 "test/*.test.mjs"
-      - name: the whole spine end to end on the local EVM
-        run: node flow.mjs --network local
-      - name: the page carries the gated kernels byte for byte
+      - name: the page is the committed run, baked, and carries the gated kernels byte for byte
         run: node tools/page-parity.mjs
+      - name: the whole spine end to end on the local EVM (a fresh run; the committed record is checked above)
+        run: node flow.mjs --network local
       - name: the in-browser EVM bundle is built from these exact sources
         run: node tools/build-evm.mjs && git diff --exit-code app/evm.js
 

@@ -1,8 +1,8 @@
 {
  "network": "QDay Aevum testnet",
  "chainId": 44005,
- "block": "3542767",
- "at": "2026-11-19T02:57:28.599Z",
+ "block": "3580898",
+ "at": "2026-11-19T13:41:02.463Z",
  "simulatedOnly": true,
  "ok": true,
  "rows": [
@@ -42,5 +42,17 @@
    "artifactBytes": 5816,
    "sizeMatches": true
   }
- ]
+ ],
+ "deployGas": "6492844",
+ "gasPriceWei": "1000000000",
+ "deployCostTQDAY": "0.006492844",
+ "deployer": "0x622bfb7Ff057cE06DC50f38715d8Dd8291cdfCfa",
+ "deployerNonce": 0,
+ "predicted": {
+  "AgentIdentityRegistry": "0x4D7e78910f7A0F595D608eAf5bB2d0Cc7a565eB4",
+  "ValidationRegistry": "0x91Ef6FF98cfee9569000aDd8f4927669A8C0e958",
+  "Fallmarket": "0x09a6F6df0dfB97C5b54746F9d38b45115827fC06",
+  "FulfilmentGate": "0x54800c31A6aB061fD05333888bb67B82517ce15a",
+  "AgentAccount": "0x58401020d340389A1A6aA6bB288F68826a4112d1"
+ }
 }

@@ -1,0 +1,95 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { runView, verifyView, wallView, screenView, costView, claimsText, esc, DEPLOY_ORDER } from '../page/render.mjs';
+import { staffTime } from '../sdk/cost.mjs';
+import { standIn } from '../lib/record-fill.mjs';
+
+const local = JSON.parse(readFileSync('runs/local.json', 'utf8'));
+const job = JSON.parse(readFileSync('fixtures/job.json', 'utf8'));
+const dry = {
+  block: '3580561', deployGas: '6492844', gasPriceWei: '1000000000', deployCostTQDAY: '0.006492844', deployer: '0x622bfb7Ff057cE06DC50f38715d8Dd8291cdfCfa', deployerNonce: 0,
+  rows: DEPLOY_ORDER.map((n, i) => ({ contract: n, gas: String(100000 + i), runtimeBytes: 1000 + i })),
+  predicted: Object.fromEntries(DEPLOY_ORDER.map((n, i) => [n, '0x' + String(i + 1).padStart(40, '0')])),
+};
+
+test('the local run renders as local: pending Aevum panel, no explorer links, every hash shown', () => {
+  const v = runView(local, { dryrun: dry });
+  assert.match(v.badges, /Aevum run pending/);
+  assert.match(v.badges, /32 transactions/);
+  assert.match(v.badges, /4 refused on-chain/);
+  assert.match(v.badges, /23\/23 checks/);
+  assert.match(v.aevum, /pill warn">pending/);
+  assert.match(v.aevum, /block 3580561/);
+  assert.match(v.aevum, /6,492,844/);
+  assert.doesNotMatch(v.timeline + v.contracts, /explorer-test\.qday\.info\/tx/);
+  for (const s of local.steps) assert.ok(v.timeline.includes(s.hash.slice(0, 10)), s.label);
+  assert.equal((v.timeline.match(/pill bad">refused/g) || []).length, 4);
+});
+
+test('the contracts table carries size, simulated gas, local address and the labelled Aevum prediction', () => {
+  const v = runView(local, { dryrun: dry });
+  assert.match(v.contracts, /predicted, not deployed yet/);
+  for (const [i, n] of DEPLOY_ORDER.entries()) {
+    assert.ok(v.contracts.includes(`<td>${n}</td><td class="num">${(1000 + i).toLocaleString('en-GB')}</td>`), n);
+    assert.ok(v.contracts.includes(dry.predicted[n]), n + ' prediction');
+    assert.ok(v.contracts.includes(local.contracts[n]), n + ' local address');
+  }
+  assert.match(v.contracts, /MockUSD8 \(local stand-in for tUSD8\)/);
+});
+
+test('without a dry run receipt nothing is invented: no prediction column, no simulated gas', () => {
+  const v = runView(local, {});
+  assert.doesNotMatch(v.contracts, /predicted/);
+  assert.doesNotMatch(v.aevum, /simulated/);
+  assert.doesNotMatch(v.cgas, /simulated/);
+});
+
+test('an Aevum run renders as recorded, with an explorer link for every hash and no prediction column', () => {
+  const a = standIn(local);
+  const v = runView(a, { dryrun: dry, verify: { matched: 32, total: 32, mismatches: [], predicted: { matched: 5, total: 5, misses: [] } } });
+  assert.match(v.aevum, /pill ok">recorded/);
+  assert.match(v.aevum, /32\/32 hashes checked against Aevum&#39;s own receipts/);
+  assert.match(v.aevum, /5\/5 matched/);
+  for (const s of a.steps) assert.ok(v.timeline.includes(`https://explorer-test.qday.info/tx/${s.hash}`), s.label);
+  assert.doesNotMatch(v.contracts, /predicted/);
+  assert.match(v.contracts, /tUSD8 \(QDay's test dollar\)/);
+  assert.match(v.badges, /QDay Aevum testnet · chain 44005/);
+  assert.match(v.boardTail, /running on QDay Aevum testnet/);
+});
+
+test('the verifier view: the paid answer passes, one changed word fails, unreadable claims refuse', () => {
+  const p = local.deliverables.job1;
+  assert.equal(verifyView(p.question, job.sources, p.answer, claimsText(p.claims)).cls, 'PASS');
+  const bad = verifyView(p.question, job.sources, p.answer.replace('owner', 'banana'), claimsText(p.claims));
+  assert.equal(bad.cls, 'FAIL');
+  assert.match(bad.why, /The cited bytes actually say/);
+  assert.notEqual(verifyView(p.question, job.sources, p.answer, '{not json').cls, 'PASS');
+  assert.match(verifyView(p.question, job.sources, p.answer, claimsText(p.claims)).srcs, /<mark>/);
+});
+
+test('the wall view refuses exactly as the account does', () => {
+  const gate = local.contracts.FulfilmentGate;
+  assert.match(wallView({ to: 'bad', amount: '10000', spent: '1', revoked: false }, gate).text, /RecipientNotAllowed/);
+  assert.match(wallView({ to: 'gate', amount: '10000', spent: '1', revoked: false }, gate).text, /OverCap/);
+  assert.match(wallView({ to: 'token', amount: '1', spent: '0', revoked: false }, gate).text, /TokenCallForbidden/);
+  assert.match(wallView({ to: 'gate', amount: '1', spent: '0', revoked: true }, gate).text, /SessionNotActive/);
+  assert.equal(wallView({ to: 'gate', amount: '1', spent: '0', revoked: false }, gate).cls, 'PASS');
+});
+
+test('the screen view flags the fixture injection and passes plain text', () => {
+  assert.equal(screenView(job.injection).cls, 'FAIL');
+  assert.equal(screenView('The agentURI resolves to the registration file.').cls, 'PASS');
+});
+
+test('the cost view is the gated kernel, formatted; bad input shows a dash, not a number', () => {
+  const r = staffTime({ jobsPerMonth: '2000', minutesPerCheck: '4', hourlyRate: '12.71' });
+  const c = costView({ jobs: '2000', minutes: '4', rate: '12.71' });
+  assert.equal(c.kpi, '£' + r.perYear.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  assert.match(c.text, /hours a month/);
+  assert.equal(costView({ jobs: '-1', minutes: '4', rate: '' }).kpi, '—');
+});
+
+test('esc escapes every HTML-significant character', () => {
+  assert.equal(esc(`<a href="x">'&'</a>`), '&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;');
+});

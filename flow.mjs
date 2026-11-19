@@ -80,5 +80,18 @@ try {
   console.log('final:', JSON.stringify(trail.final, replacer));
 } catch (e) {
   console.error('FLOW FAILED:', e.message);
+  // keep a failed attempt in the record: its transactions are on-chain whether or not the run finished.
+  // It never replaces runs/<network>.json and never flips runs/index.json.
+  if (e.trail && e.trail.steps.length) {
+    try {
+      e.trail.explorer = chain?.explorer ?? null;
+      mkdirSync('runs', { recursive: true });
+      const out = `runs/${net}-failed-${e.trail.started.replace(/[:.]/g, '-')}.json`;
+      writeFileSync(out, JSON.stringify(e.trail, replacer, 1) + '\n');
+      console.error(`the partial trail (${e.trail.steps.length} transactions) is kept in ${out}`);
+    } catch (w) {
+      console.error('could not write the partial trail:', w.message);
+    }
+  }
   process.exit(1);
 }
