@@ -55,8 +55,27 @@ export function runView(trail, ctx = {}) {
   const b = trail.final.balances;
   const v = {};
 
+  // the hero: the testnet proof, or plainly the lack of it
+  const find = (pred) => trail.steps.find(pred);
+  const key = onAevum ? [
+    ['Paid on proof', find((s) => s.step === 'S8' && s.status === 'success')],
+    ['Injection refused', find((s) => s.step === 'S5' && s.error?.name === 'RecipientNotAllowed')],
+    ['Injection refused again (over the cap)', find((s) => s.step === 'S5' && s.error?.name === 'OverCap')],
+    ['Release without a PASS refused', find((s) => s.step === 'S9' && s.status === 'reverted')],
+    ['Refund on FAIL', find((s) => s.step === 'S9' && s.status === 'success' && /refund/i.test(s.label))],
+    ['Revoked key refused', find((s) => s.step === 'S11' && s.status === 'reverted')],
+  ].filter(([, s]) => s) : [];
+  v.heroProof = onAevum
+    ? `<div class="card state ok"><div class="statehead"><span class="pill ok">on QDay Aevum testnet</span> <b>${trail.steps.length} real transactions on chain 44005, ${esc(trail.started.slice(0, 10))}</b></div>`
+      + `<table class="keytx">${key.map(([t, s]) => `<tr><td>${esc(t)}</td><td>${txLink(ex, s.hash)}${s.error ? ` <span class="pill bad">${esc(s.error.name)}</span>` : ' <span class="pill ok">ok</span>'}</td><td class="meta">block ${esc(s.block)}</td></tr>`).join('')}</table>`
+      + `<p class="meta">FulfilmentGate ${addrLink(ex, trail.contracts.FulfilmentGate)} · AgentAccount ${addrLink(ex, trail.contracts.AgentAccount)}. Every transaction, every balance change and every contract is below, each linked to explorer-test.qday.info.${ver ? ` ${ver.matched}/${ver.total} hashes re-read from Aevum's own receipts after the run.` : ''}</p></div>`
+    : `<div class="card state pending"><div class="statehead"><span class="pill warn">pending</span> <b>The testnet proof: not recorded yet</b></div>`
+      + `<p>This entry is judged on real transactions on QDay Aevum testnet (chain 44005). There are none yet: the deployer address${dry && dry.deployer ? ` ${addrLink(exA, dry.deployer)}` : ''} is waiting for test gas. When it has it, one command (<code>node tools/aevum-go.mjs</code>) runs the whole flow on Aevum, and this box fills with the transaction hashes, each linked to the explorer.</p>`
+      + `<p class="meta">Until then, every run on this page is labelled <b>SIMULATED</b>: the same compiled contracts on a local EVM, not the testnet.</p></div>`;
+  v.runTitle = onAevum ? 'The run, on QDay Aevum testnet' : 'The run <span class="pill warn">SIMULATED · local EVM, not the testnet</span>';
+
   v.badges = [
-    `<span class="badge"><span class="dot ${onAevum ? 'ok' : 'warn'}"></span>${onAevum ? 'QDay Aevum testnet · chain 44005' : 'recorded run: local Shanghai EVM · Aevum run pending'}</span>`,
+    `<span class="badge"><span class="dot ${onAevum ? 'ok' : 'warn'}"></span>${onAevum ? 'QDay Aevum testnet · chain 44005' : 'SIMULATED local run · the testnet run is pending'}</span>`,
     `<span class="badge"><span class="dot ok"></span>${trail.steps.length} transactions</span>`,
     `<span class="badge"><span class="dot bad"></span>${refused.length} refused on-chain, as designed</span>`,
     `<span class="badge"><span class="dot ${passed === trail.checks.length ? 'ok' : 'bad'}"></span>${passed}/${trail.checks.length} checks</span>`,
@@ -110,6 +129,49 @@ export function runView(trail, ctx = {}) {
 
   v.checks = trail.checks.map((c) => `<li>${c.ok ? '✓' : '✗'} ${esc(c.name)}</li>`).join('');
 
+  // state changes: each party's tUSD8 read from the chain right after the named transaction, at its block
+  const blk = (n) => (ex ? `<a class="mono" href="${esc(ex)}/block/${esc(n)}" target="_blank" rel="noopener">${esc(n)}</a>` : esc(n));
+  v.states = (trail.states && trail.states.length)
+    ? `<tr><th>Right after</th><th class="num">Block</th><th class="num">Principal</th><th class="num">Agent account</th><th class="num">Gate (escrow)</th><th class="num">Worker</th><th class="num">0xBAD…</th></tr>`
+      + trail.states.map((st) => `<tr><td>${esc(st.after)} <span class="meta">(${esc(st.step)}, ${txLink(ex, st.hash)})</span></td><td class="num">${blk(st.block)}</td>${['principal', 'agentAccount', 'gate', 'worker', 'attacker'].map((k) => `<td class="num">${esc(st.balances[k])}</td>`).join('')}</tr>`).join('')
+    : `<tr><td>This recorded run predates the balance snapshots; the next run records them.</td></tr>`;
+
+  // gas per step: measured; in tQDAY at the price Aevum charged (Aevum run), or at the dry run's price (local)
+  const priceWei = dry ? Number(dry.gasPriceWei) : null;
+  const byStep = [];
+  for (const s of trail.steps) {
+    let row = byStep.find((r) => r.step === s.step);
+    if (!row) byStep.push((row = { step: s.step, n: 0, gas: 0, wei: 0, priced: true }));
+    row.n++;
+    row.gas += Number(s.gasUsed || 0);
+    if (s.gasPrice) row.wei += Number(s.gasUsed || 0) * Number(s.gasPrice);
+    else row.priced = false;
+  }
+  const tq = (r) => (onAevum && r.priced ? (r.wei / 1e18).toFixed(6) : priceWei ? ((r.gas * priceWei) / 1e18).toFixed(6) : '');
+  const totalGas = byStep.reduce((a, r) => a + r.gas, 0);
+  const allPriced = byStep.every((r) => r.priced);
+  const totalTq = onAevum && allPriced ? byStep.reduce((a, r) => a + r.wei, 0) / 1e18 : priceWei ? (totalGas * priceWei) / 1e18 : 0;
+  v.gasSteps = `<tr><th>Step</th><th>What</th><th class="num">Transactions</th><th class="num">Gas</th><th class="num">tQDAY${onAevum ? ' (as charged)' : priceWei ? ` (at ${esc(priceWei / 1e9)} gwei)` : ''}</th></tr>`
+    + byStep.map((r) => `<tr><td>${esc(r.step)}</td><td>${esc(STEP_TITLES[r.step] || r.step)}</td><td class="num">${r.n}</td><td class="num">${int(r.gas)}</td><td class="num">${tq(r)}</td></tr>`).join('')
+    + `<tr><td></td><td><b>The whole run</b></td><td class="num"><b>${trail.steps.length}</b></td><td class="num"><b>${int(totalGas)}</b></td><td class="num"><b>${totalTq ? totalTq.toFixed(6) : ''}</b></td></tr>`;
+  v.gasNote = onAevum
+    ? 'Measured on QDay Aevum testnet: gas used and the price Aevum charged, from each transaction\'s receipt.'
+    : `<span class="pill warn">SIMULATED</span> Gas measured on the local EVM running the same bytecode${priceWei ? `, priced at Aevum's gas price at the dry run (block ${esc(dry.block)})` : ''}. The testnet run replaces these with Aevum's own receipts.`;
+
+  // the comparison, with per-unit numbers from the run and the calculator's defaults
+  const cost = ctx.cost || null;
+  const job1Gas = trail.steps.filter((s) => s.step === 'S4' || s.step === 'S6' || s.step === 'S7' || s.step === 'S8').reduce((a, s) => a + Number(s.gasUsed || 0), 0);
+  const injGas = trail.steps.filter((s) => s.step === 'S5').reduce((a, s) => a + Number(s.gasUsed || 0), 0);
+  const refundStep = find((s) => s.step === 'S9' && s.status === 'success' && /refund/i.test(s.label));
+  const perCheck = cost ? (Number(cost.minutes) / 60) * Number(cost.rate) : null;
+  const src = onAevum ? 'the Aevum run' : 'the SIMULATED run';
+  v.compare = `<tr><th></th><th>Today: agents with a card or an API key</th><th>With the trust layer (numbers from ${src})</th></tr>`
+    + `<tr><td>Who checks the work</td><td>a person, when they have time, or nobody${perCheck != null ? `: ${esc(cost.minutes)} minutes a deliverable = £${fmt2(perCheck)} at £${fmt2(cost.rate)} an hour (the calculator's defaults)` : ''}</td><td>the verifier on every job, and the chain re-checks the quote: ${int(job1Gas)} gas for one paid job end to end (take, submit, request, verdict, release); no person in the loop</td></tr>`
+    + `<tr><td>A prompt injection says "pay X"</td><td>the agent's key can pay X, up to everything it holds</td><td>refused on-chain: 0.00 paid of 10,000 asked; ${refused.filter((s) => s.step === 'S5').length} reverted transactions (${int(injGas)} gas)</td></tr>`
+    + `<tr><td>Ungrounded work</td><td>paid, then disputed</td><td>never released; the FAIL refunds ${esc(b.agentAccount === '1.00' ? '1.00' : 'the')} tUSD8 in one transaction${refundStep ? ` (${int(refundStep.gasUsed)} gas)` : ''}</td></tr>`
+    + `<tr><td>Audit</td><td>logs you keep yourself</td><td>${trail.steps.length} public transactions for the whole run, each re-checkable by anyone</td></tr>`
+    + `<tr><td>Licence</td><td>per seat or per transaction</td><td>MIT: no licence fee; you run the contracts</td></tr>`;
+
   // the contracts: size and simulated Aevum gas from the dry run, this run's address, and (until the Aevum
   // run exists) where each will land on Aevum, predicted from the deployer's nonce and labelled as such
   const rowOf = (n) => (dry ? dry.rows.find((r) => r.contract === n) : null) || {};
@@ -138,12 +200,18 @@ export function runView(trail, ctx = {}) {
 
   v.cgas = `${int(gas)} gas units for all ${trail.steps.length} transactions of the ${onAevum ? 'Aevum' : 'local'} run (both jobs, both attacks, deploys included)`
     + (onAevum ? '' : (dry ? `. On Aevum, the five deployments were simulated at ${int(dry.deployGas)} gas (${Number(dry.deployCostTQDAY).toFixed(4)} tQDAY); the measured figure replaces this after the testnet run` : ''));
+  const exv = onAevum && ver && ver.explorer ? ver.explorer : null;
+  v.explorerNote = exv
+    ? (exv.results.some((r) => r.ok)
+      ? `Source verified on explorer-test.qday.info for ${exv.results.filter((r) => r.ok).map((r) => `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.contract)}</a>`).join(', ')}${exv.results.some((r) => !r.ok) ? `; not for ${exv.results.filter((r) => !r.ok).map((r) => esc(r.contract)).join(', ')} (${esc(exv.results.find((r) => !r.ok).detail)})` : ''}. The exact bytecode is also in <code>artifacts/</code> for anyone to recompile and compare.`
+      : `The explorer's contract verifier was tried after the run and did not verify the source (${esc(exv.results[0] ? exv.results[0].detail : 'no result')}), so the exact bytecode is published in <code>artifacts/</code> for anyone to recompile and compare against <code>eth_getCode</code>.`)
+    : 'QDay\'s starter kit reports the explorer\'s contract verifier as not working. The testnet run tries it anyway, and this sentence then says what happened. Either way, the exact bytecode is published in <code>artifacts/</code> for anyone to recompile and compare against <code>eth_getCode</code>.';
   v.boardTail = onAevum
     ? 'it is running on QDay Aevum testnet: every step of the run above is a transaction you can open on the explorer.'
     : 'it runs end to end on a Shanghai EVM and in your browser, built for QDay Aevum testnet; the Aevum run is recorded here when it is made.';
   v.critDemo = onAevum
     ? '<a href="#run">The run</a>: every transaction linked to explorer-test.qday.info'
-    : '<a href="#browser">The in-browser run</a> (the real compiled contracts, in your browser) and <a href="#run">the recorded run</a>, every transaction with its hash; once the Aevum testnet run is recorded, each hash links to explorer-test.qday.info';
+    : '<b>Pending:</b> the testnet run is not recorded yet; when it is, <a href="#run">the run</a> lists every transaction linked to explorer-test.qday.info, with the balance changes. Until then the run shown is SIMULATED (local EVM), and <a href="#browser">the in-browser run</a> is an offline fallback, also SIMULATED';
   return v;
 }
 

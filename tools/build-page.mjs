@@ -54,7 +54,7 @@ export function bakeValues(tpl, d) {
   const c = costView({ jobs: inputDefault(tpl, 'cj'), minutes: inputDefault(tpl, 'cm'), rate: inputDefault(tpl, 'cr') });
   const pageData = { job: d.job, trail: { deliverables: d.trail.deliverables, contracts: { FulfilmentGate: d.trail.contracts.FulfilmentGate } } };
   return {
-    ...runView(d.trail, { dryrun: d.dryrun, verify: d.verify }),
+    ...runView(d.trail, { dryrun: d.dryrun, verify: d.verify, cost: { minutes: inputDefault(tpl, 'cm'), rate: inputDefault(tpl, 'cr') } }),
     vq: esc(p.question), va: esc(p.answer), vc: esc(claimsText(p.claims)),
     vout: esc(vv.text), 'vout.cls': vv.cls, vwhy: vv.why, srcs: vv.srcs,
     wout: esc(w.text), 'wout.cls': w.cls,

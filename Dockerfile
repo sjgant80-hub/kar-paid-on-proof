@@ -1,7 +1,7 @@
 # Kar trust layer — the whole spine in one container.
-#   docker build -t kar-trust-layer .
-#   docker run --rm kar-trust-layer                                  # local Shanghai EVM: no keys, no funds, no network
-#   docker run --rm --env-file .env.aevum kar-trust-layer --network aevum   # QDay Aevum testnet with your TEST keys
+#   docker build -t kar-paid-on-proof .
+#   docker run --rm kar-paid-on-proof                                  # local Shanghai EVM: no keys, no funds, no network
+#   docker run --rm --env-file .env.aevum kar-paid-on-proof --network aevum   # QDay Aevum testnet with your TEST keys
 FROM node:22-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./

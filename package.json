@@ -1,14 +1,14 @@
 {
-  "name": "kar-trust-layer",
+  "name": "kar-paid-on-proof",
   "version": "1.0.0",
   "description": "Fulfilment-gated settlement for AI agents on QDay Aevum testnet: ERC-8004 identity, a session-key smart account with caps, DocDec-verified deliverables, tUSD8 released only on proof.",
   "type": "module",
   "license": "MIT",
   "author": "Kar for AI Native Solutions",
-  "homepage": "https://sjgant80-hub.github.io/kar-trust-layer/",
+  "homepage": "https://sjgant80-hub.github.io/kar-paid-on-proof/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sjgant80-hub/kar-trust-layer"
+    "url": "https://github.com/sjgant80-hub/kar-paid-on-proof"
   },
   "engines": {
     "node": ">=22"

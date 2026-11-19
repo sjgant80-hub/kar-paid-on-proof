@@ -66,5 +66,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t kar-trust-layer .
-      - run: docker run --rm kar-trust-layer
+      - run: docker build -t kar-paid-on-proof .
+      - run: docker run --rm kar-paid-on-proof

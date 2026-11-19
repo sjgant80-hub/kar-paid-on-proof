@@ -1,5 +1,5 @@
 // Offline: network first, the last good copy when offline. Nothing here touches a wallet or a key.
-const CACHE = 'kar-trust-layer-v1';
+const CACHE = 'kar-paid-on-proof-v2';
 const CORE = ['./', 'index.html', 'fixtures/job.json', 'runs/local.json', 'app/evm.js', 'icon.svg', 'manifest.webmanifest',
   'artifacts/AgentIdentityRegistry.json', 'artifacts/ValidationRegistry.json', 'artifacts/Fallmarket.json',
   'artifacts/AgentAccount.json', 'artifacts/FulfilmentGate.json', 'artifacts/MockUSD8.json'];

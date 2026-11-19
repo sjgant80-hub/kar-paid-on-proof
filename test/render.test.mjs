@@ -15,7 +15,7 @@ const dry = {
 
 test('the local run renders as local: pending Aevum panel, no explorer links, every hash shown', () => {
   const v = runView(local, { dryrun: dry });
-  assert.match(v.badges, /Aevum run pending/);
+  assert.match(v.badges, /SIMULATED local run · the testnet run is pending/);
   assert.match(v.badges, /32 transactions/);
   assert.match(v.badges, /4 refused on-chain/);
   assert.match(v.badges, /23\/23 checks/);
@@ -88,6 +88,69 @@ test('the cost view is the gated kernel, formatted; bad input shows a dash, not 
   assert.equal(c.kpi, '£' + r.perYear.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   assert.match(c.text, /hours a month/);
   assert.equal(costView({ jobs: '-1', minutes: '4', rate: '' }).kpi, '—');
+});
+
+test('the hero is the testnet proof: pending says so plainly; recorded links the key transactions', () => {
+  const p = runView(local, { dryrun: dry });
+  assert.match(p.heroProof, /pill warn">pending/);
+  assert.match(p.heroProof, /The testnet proof: not recorded yet/);
+  assert.match(p.heroProof, /SIMULATED/);
+  assert.match(p.runTitle, /SIMULATED/);
+  assert.doesNotMatch(p.heroProof, /explorer-test\.qday\.info\/tx/);
+  const a = standIn(local);
+  const r = runView(a, { dryrun: dry, verify: { matched: 32, total: 32, mismatches: [] } });
+  assert.match(r.heroProof, /on QDay Aevum testnet/);
+  assert.doesNotMatch(r.heroProof + r.runTitle, /SIMULATED/);
+  for (const name of ['RecipientNotAllowed', 'OverCap', 'NotValidated', 'SessionNotActive']) {
+    const s = a.steps.find((x) => x.error?.name === name);
+    assert.ok(r.heroProof.includes(`https://explorer-test.qday.info/tx/${s.hash}`), name);
+  }
+  assert.ok(r.heroProof.includes(a.steps.find((s) => s.step === 'S8').hash), 'release');
+});
+
+test('state changes: one row per snapshot, with block and every party; old runs say they have none', () => {
+  const states = [
+    { after: 'before', step: 'S0', block: 9, hash: local.steps[0].hash, balances: { principal: '10.00', agentAccount: '0.00', gate: '0.00', worker: '0.00', attacker: '0.00' } },
+    { after: 'escrowed', step: 'S4', block: 17, hash: local.steps[16].hash, balances: { principal: '8.00', agentAccount: '1.00', gate: '1.00', worker: '0.00', attacker: '0.00' } },
+  ];
+  const v = runView({ ...local, states }, { dryrun: dry });
+  assert.equal((v.states.match(/<tr>/g) || []).length, 3);
+  assert.match(v.states, /escrowed/);
+  assert.match(v.states, /<td class="num">1\.00<\/td><td class="num">1\.00<\/td>/);
+  assert.match(runView({ ...standIn(local), states }, {}).states, /explorer-test\.qday\.info\/block\/17/);
+  assert.match(runView({ ...local, states: undefined }, {}).states, /predates the balance snapshots/);
+});
+
+test('gas per step adds up to the whole run, priced as charged on Aevum or at the dry-run price, labelled', () => {
+  const v = runView(local, { dryrun: dry });
+  const total = local.steps.reduce((a, s) => a + Number(s.gasUsed), 0);
+  assert.ok(v.gasSteps.includes(`<b>${total.toLocaleString('en-GB')}</b>`));
+  assert.ok(v.gasSteps.includes(`<b>${((total * 1e9) / 1e18).toFixed(6)}</b>`));
+  assert.match(v.gasNote, /SIMULATED/);
+  const a = standIn(local);
+  a.steps = a.steps.map((s) => ({ ...s, gasPrice: '1200000000' }));
+  const r = runView(a, { dryrun: dry });
+  assert.match(r.gasSteps, /as charged/);
+  assert.ok(r.gasSteps.includes(`<b>${((total * 1.2e9) / 1e18).toFixed(6)}</b>`));
+  assert.doesNotMatch(r.gasNote, /SIMULATED/);
+});
+
+test('the comparison carries per-unit numbers from the run and the calculator defaults', () => {
+  const v = runView(local, { dryrun: dry, cost: { minutes: '4', rate: '12.71' } });
+  assert.match(v.compare, /4 minutes a deliverable = £0\.85 at £12\.71 an hour/);
+  assert.match(v.compare, /gas for one paid job end to end/);
+  assert.match(v.compare, /0\.00 paid of 10,000 asked; 2 reverted transactions/);
+  assert.match(v.compare, /32 public transactions/);
+});
+
+test('the explorer note says what the verifier attempt did, and only after an Aevum run', () => {
+  assert.match(runView(local, {}).explorerNote, /starter kit reports/);
+  const a = standIn(local);
+  const ok = runView(a, { verify: { matched: 32, total: 32, mismatches: [], explorer: { results: [{ contract: 'FulfilmentGate', ok: true, url: 'https://explorer-test.qday.info/address/0x1?tab=contract' }, { contract: 'Fallmarket', ok: false, detail: 'HTTP 500' }] } } });
+  assert.match(ok.explorerNote, /Source verified on explorer-test\.qday\.info for <a/);
+  assert.match(ok.explorerNote, /not for Fallmarket \(HTTP 500\)/);
+  const no = runView(a, { verify: { matched: 32, total: 32, mismatches: [], explorer: { results: [{ contract: 'FulfilmentGate', ok: false, detail: 'HTTP 404' }] } } });
+  assert.match(no.explorerNote, /did not verify the source \(HTTP 404\)/);
 });
 
 test('esc escapes every HTML-significant character', () => {

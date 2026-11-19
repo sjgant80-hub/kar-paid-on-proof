@@ -1,8 +1,9 @@
 # Kar trust layer: settlement that waits for proof
 
-**▶ Live: https://sjgant80-hub.github.io/kar-trust-layer/**: the page explains itself, replays the recorded run with every
-transaction hash (with Aevum explorer links once the testnet run is recorded), re-checks every deliverable in your
-browser, and runs the whole flow on an in-browser EVM.
+**▶ Live: https://sjgant80-hub.github.io/kar-paid-on-proof/**: the page explains itself and shows the run with every
+transaction hash, the balance changes block by block and the gas per step. Once the Aevum testnet run is recorded, every
+hash links to the explorer; until then the run shown is labelled SIMULATED (a local EVM, not the testnet). It also
+re-checks any deliverable in your browser, and keeps an offline SIMULATED run of the whole flow as a fallback.
 
 An AI agent should not be able to pay for work nobody checked, and it should not be able to pay an attacker at all.
 This is the trust layer for agent commerce, built for **QDay Aevum testnet** (chain 44005) and its **tUSD8** test token
@@ -44,7 +45,7 @@ with `node tools/compile.mjs` and compare against `eth_getCode`.
 ## Run it yourself
 
 ```bash
-git clone https://github.com/sjgant80-hub/kar-trust-layer && cd kar-trust-layer
+git clone https://github.com/sjgant80-hub/kar-paid-on-proof && cd kar-paid-on-proof
 npm ci
 node flow.mjs --network local      # the whole spine on an in-process Shanghai EVM: no keys, no funds, no network
 npm test                           # every contract and kernel test
@@ -53,12 +54,22 @@ npm test                           # every contract and kernel test
 With Docker:
 
 ```bash
-docker build -t kar-trust-layer .
-docker run --rm kar-trust-layer                                         # local
-docker run --rm --env-file .env.aevum kar-trust-layer --network aevum   # Aevum testnet, your TEST keys
+docker build -t kar-paid-on-proof .
+docker run --rm kar-paid-on-proof                                         # local
+docker run --rm --env-file .env.aevum kar-paid-on-proof --network aevum   # Aevum testnet, your TEST keys
 ```
 
-On Aevum testnet (`node flow.mjs --network aevum`), set four **test** keys in the environment or in a git-ignored
+On Aevum testnet, the whole path is one command:
+
+```bash
+node tools/new-test-keys.mjs   # 4 fresh TEST keys into the git-ignored .env.aevum; prints addresses only
+# claim the QDay faucet to the principal address it prints, then:
+node tools/aevum-go.mjs        # funds check, dry run, the flow on chain 44005, every hash re-read from Aevum's
+                               # receipts, contract source sent to the explorer, CLAIMS.md + this README + the page rebuilt
+node tools/aevum-go.mjs --rehearse   # read-only: sends nothing, needs no funds
+```
+
+Or run just the flow (`node flow.mjs --network aevum`), with four **test** keys in the environment or in a git-ignored
 `.env.aevum`:
 
 | Variable | Role | Needs |
@@ -103,8 +114,8 @@ flowchart LR
 
 The **Sovereign Agent Payments SDK** is `sdk/`: the three kernels plus hashes that match the contracts byte for byte,
 EIP-712 types for the session key and the ERC-8004 wallet binding, the ERC-8004 registration file, and the Aevum
-network config. Install from this repo: `npm i github:sjgant80-hub/kar-trust-layer`, then
-`import { verifyDeliverable, sessionActionTypedData } from 'kar-trust-layer'`.
+network config. Install from this repo: `npm i github:sjgant80-hub/kar-paid-on-proof`, then
+`import { verifyDeliverable, sessionActionTypedData } from 'kar-paid-on-proof'`.
 
 ## Proof
 
@@ -119,7 +130,9 @@ network config. Install from this repo: `npm i github:sjgant80-hub/kar-trust-lay
 
 It proves the answer's words sit at their cited byte offsets in the sources the buyer committed to, and that the
 named verifier signed off. It does not prove the answer is the best one, that the sources are true, or that the worker
-understood them. At release the cited sources go on-chain as calldata, so use sources you can publish. DocDec's own
+understood them. The verifier's on-question judgement is signed and attributable, but not re-run on-chain; only the
+verbatim rule is. At release the cited sources go on-chain as calldata, so confidential sources need a permissioned
+deployment. DocDec's own
 benchmark results, including the tests it failed, are on [the DocDec demo](https://sjgant80-hub.github.io/docdecdemo/).
 
 ## Credits

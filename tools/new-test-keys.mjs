@@ -16,7 +16,7 @@ if (!ignored) {
   process.exit(1);
 }
 const roles = ['PRINCIPAL', 'WORKER', 'VALIDATOR', 'SESSION'];
-const lines = ['# QDay Aevum TESTNET keys for kar-trust-layer. Test tokens only. Never commit, never reuse on mainnet.'];
+const lines = ['# QDay Aevum TESTNET keys for kar-paid-on-proof. Test tokens only. Never commit, never reuse on mainnet.'];
 const out = {};
 for (const r of roles) {
   const k = '0x' + randomBytes(32).toString('hex');

@@ -49,7 +49,7 @@ const only = opt('--only');
 const W = witnessDir(opt('--witness'));
 const env = { ...process.env };
 delete env.NODE_TEST_CONTEXT;
-const receipt = { gate: 'kar-trust-layer mutation gate', started: new Date().toISOString(), witness: W.replace(/\\/g, '/').split('/').pop(), files: [] };
+const receipt = { gate: 'kar-paid-on-proof mutation gate', started: new Date().toISOString(), witness: W.replace(/\\/g, '/').split('/').pop(), files: [] };
 let clean = true;
 
 for (const g of MAP) {

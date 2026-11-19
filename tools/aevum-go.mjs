@@ -15,7 +15,10 @@ import { spawnSync } from 'node:child_process';
 import { createPublicClient, http, parseAbi, formatUnits, getAddress } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { AEVUM, TUSD8 } from '../sdk/index.mjs';
+import solc from 'solc';
 import { verifyTrail } from '../lib/aevum-verify.mjs';
+import { verifyOnExplorer } from '../lib/explorer-verify.mjs';
+import { loadArtifacts } from '../lib/setup.mjs';
 import { fillClaims, fillReadme, standIn } from '../lib/record-fill.mjs';
 import { buildPage, loadPageData } from './build-page.mjs';
 
@@ -107,6 +110,23 @@ if (node(['flow.mjs', '--network', 'aevum']) !== 0) {
 }
 const trail = readJSON('runs/aevum.json');
 const verify = await verifyTrail(pub, trail, dry);
+// best effort: publish each contract's source on the explorer; the result is recorded either way
+{
+  const art = loadArtifacts();
+  const c = trail.contracts;
+  const ctorArgs = {
+    AgentIdentityRegistry: [], ValidationRegistry: [c.AgentIdentityRegistry], Fallmarket: [c.AgentIdentityRegistry, c.ValidationRegistry],
+    FulfilmentGate: [c.tUSD8, c.AgentIdentityRegistry, c.ValidationRegistry, c.Fallmarket], AgentAccount: [trail.roles.principal, c.tUSD8],
+  };
+  const compilerVersion = 'v' + solc.version().replace(/\.Emscripten.*$/, '');
+  const results = [];
+  for (const n of Object.keys(ctorArgs)) {
+    const r = await verifyOnExplorer({ explorer: trail.explorer, address: c[n], contract: n, art: art[n], sourceText: readFileSync(art[n].source, 'utf8'), args: ctorArgs[n], compilerVersion });
+    console.log(`explorer source verification, ${n}: ${r.ok ? 'verified' : r.detail}`);
+    results.push(r);
+  }
+  verify.explorer = { attempted: new Date().toISOString(), compilerVersion, results };
+}
 writeFileSync('receipts/aevum-verify.json', JSON.stringify(verify, null, 1) + '\n');
 console.log(`re-read from Aevum: ${verify.matched}/${verify.total} match${verify.predicted ? `; predicted addresses ${verify.predicted.matched}/${verify.predicted.total}` : ''}${verify.mismatches.length ? '; MISMATCHES: ' + JSON.stringify(verify.mismatches) : ''}`);
 writeFileSync('CLAIMS.md', fillClaims(readFileSync('CLAIMS.md', 'utf8'), trail, verify));

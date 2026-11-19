@@ -58,6 +58,7 @@ mark{background:var(--mark);color:inherit;border-radius:3px}
 .limits{border-left:3px solid var(--bad);background:var(--bad-bg);padding:10px 14px;border-radius:0 8px 8px 0}
 svg text{fill:var(--ink);font:12px system-ui,sans-serif}svg .muted{fill:var(--muted)}svg .box{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
 svg .edge{stroke:var(--accent);stroke-width:2;fill:none}svg .edge.bad{stroke:var(--bad);stroke-dasharray:5 4}svg .lbl{font-size:11px}svg .big{font-weight:700;font-size:13px}
+.heroproof{margin:16px 0 4px}.heroproof .card{margin:0}.keytx{margin-top:6px}.keytx td{padding:5px 8px}
 .state{margin:0 0 14px}.state.pending{border-left:4px solid var(--warn)}.state.ok{border-left:4px solid var(--ok)}.state p{margin:.5em 0 0}
 .statehead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cta{margin:16px 0 4px;padding:14px 16px;border:1px solid var(--accent);border-radius:10px;background:var(--panel);box-shadow:var(--shadow)}
@@ -82,15 +83,13 @@ footer{padding:26px 0 40px;color:var(--muted);font-size:.9em;border-top:1px soli
   <h1>An AI agent should pay only for checked work, and never pay an attacker.</h1>
   <p class="lead">Kar Trust Layer is settlement for agent commerce, built for <b>QDay Aevum testnet</b>. An agent with an <b>ERC-8004</b> identity takes a job from <b>Fallmarket</b> through a <b>session key</b> it cannot exceed. A worker delivers an answer made only of words copied from the job's sources. The <b>DocDec verifier</b> signs off, and the <b>FulfilmentGate</b> releases <b>tUSD8</b> only after the chain rebuilds the answer from the cited bytes of those sources and finds it identical. A prompt injection that tells the agent to pay someone else is refused by the chain, even when the agent obeys it.</p>
   <div class="badges" id="badges">{{badges}}</div>
-  <div class="cta" id="heroRun">
-    <div class="btns" style="margin:0"><button class="btn" id="heroRunBtn" type="button">▶ Run the real compiled contracts in your browser</button><a class="btn ghost" href="#try">Try to break the verifier</a><a class="btn ghost" href="#run">See the recorded run</a></div>
-    <p>No wallet, no testnet, no keys: this page starts an Ethereum virtual machine in your browser, deploys the six contracts from the exact bytecode that goes to Aevum, and runs every step, the attacks included, in about ten seconds. Nothing leaves your machine.</p>
-    <noscript><p class="note">The in-browser run and the playgrounds need JavaScript. Everything else on this page, the recorded run included, is plain HTML.</p></noscript>
-  </div>
+  <div id="heroProof" class="heroproof">{{heroProof}}</div>
+  <div class="btns"><a class="btn" href="#run">The run, step by step</a><a class="btn ghost" href="#state">The balance changes</a><a class="btn ghost" href="#try">Try to break the verifier</a><a class="btn ghost" href="#browser">Offline fallback (SIMULATED)</a></div>
+  <noscript><p class="note">The playgrounds and the offline simulation need JavaScript. Everything else on this page, the run included, is plain HTML.</p></noscript>
   <div class="grid g3" style="margin-top:14px">
-    <div class="card"><b>The injection is refused</b><p class="meta">Steps S5 of <a href="#run">the run</a>: the agent's key signs "pay 0xBAD… 10,000"; two transactions revert on-chain (<code>RecipientNotAllowed</code>, <code>OverCap</code>); the attacker's balance stays 0.00. Code: <a href="https://github.com/sjgant80-hub/kar-trust-layer/blob/main/contracts/AgentAccount.sol">AgentAccount.executeSession</a>.</p></div>
-    <div class="card"><b>The quote is re-checked on-chain</b><p class="meta"><code>release</code> hashes the sources against the root committed when the job opened, slices each cited byte range, joins them with single spaces, and reverts unless that equals the answer. Code: <a href="https://github.com/sjgant80-hub/kar-trust-layer/blob/main/contracts/FulfilmentGate.sol">FulfilmentGate._checkGrounded</a>.</p></div>
-    <div class="card"><b>Your browser runs the same bytes</b><p class="meta"><a href="#browser">The in-page run</a> deploys <code>artifacts/*.json</code>, the bytecode CI recompiles from source on every push and refuses if it drifts; that same file is what deploys to Aevum.</p></div>
+    <div class="card"><b>The injection is refused</b><p class="meta">Steps S5 of <a href="#run">the run</a>: the agent's key signs "pay 0xBAD… 10,000"; two transactions revert on-chain (<code>RecipientNotAllowed</code>, <code>OverCap</code>); the attacker's balance stays 0.00. Code: <a href="https://github.com/sjgant80-hub/kar-paid-on-proof/blob/main/contracts/AgentAccount.sol">AgentAccount.executeSession</a>.</p></div>
+    <div class="card"><b>The quote is re-checked on-chain</b><p class="meta"><code>release</code> hashes the sources against the root committed when the job opened, slices each cited byte range, joins them with single spaces, and reverts unless that equals the answer. Code: <a href="https://github.com/sjgant80-hub/kar-paid-on-proof/blob/main/contracts/FulfilmentGate.sol">FulfilmentGate._checkGrounded</a>.</p></div>
+    <div class="card"><b>The bytes that deploy are the bytes that were tested</b><p class="meta"><code>artifacts/*.json</code> is the bytecode CI recompiles from source on every push (it refuses if they drift), the bytecode the mutation gate tests, and the bytecode <code>flow.mjs</code> deploys to Aevum.</p></div>
   </div>
 </div>
 
@@ -111,17 +110,19 @@ footer{padding:26px 0 40px;color:var(--muted);font-size:.9em;border-top:1px soli
   <h2>Start here</h2>
   <p class="sub">Four ways in, from one click to the whole repository.</p>
   <div class="grid g2">
-    <div class="card"><h3>1 · Watch the real run</h3><p>Every step below is a transaction, with its hash and, on Aevum, a link to the explorer. The four red steps are attacks and mistakes that the chain <b>refused</b>.</p><a class="btn ghost" href="#run">Go to the run</a></div>
-    <div class="card"><h3>2 · Run it in your browser</h3><p>The same contracts, the same bytecode and the same flow, on an EVM inside this page. No wallet, no keys, nothing leaves your machine.</p><a class="btn ghost" href="#browser">Run it here</a></div>
+    <div class="card"><h3>1 · Check the run</h3><p>Every step below is a transaction with its hash; on Aevum each links to the explorer, with the balance changes at each block. The four red steps are attacks and mistakes that the chain <b>refused</b>.</p><a class="btn ghost" href="#run">Go to the run</a></div>
+    <div class="card"><h3>2 · Run it on the testnet yourself</h3><pre>node tools/new-test-keys.mjs   # 4 fresh TEST keys, git-ignored
+# fund the address it prints from the QDay faucet, then:
+node tools/aevum-go.mjs        # the whole flow on Aevum</pre><p class="meta">Real transactions on chain 44005; every hash is re-read from Aevum's receipts and written to <code>runs/aevum.json</code>.</p></div>
     <div class="card"><h3>3 · Try to break the verifier</h3><p>Change one word of the paid answer, or point a citation at the wrong bytes, and watch the verdict flip from PASS to FAIL.</p><a class="btn ghost" href="#try">Try it</a></div>
-    <div class="card"><h3>4 · Run it yourself</h3><pre>git clone https://github.com/sjgant80-hub/kar-trust-layer
-cd kar-trust-layer && npm ci
+    <div class="card"><h3>4 · Offline: the SIMULATED run</h3><p>No wallet, no network: <a href="#browser">run the same contracts on an EVM inside this page</a>, or locally:</p><pre>git clone https://github.com/sjgant80-hub/kar-paid-on-proof
+cd kar-paid-on-proof && npm ci
 node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum with your test keys: <a href="#docs">docs</a>.</p></div>
   </div>
 </section>
 
 <section id="run">
-  <h2>The run</h2>
+  <h2>{{runTitle}}</h2>
   <div id="aevum">{{aevum}}</div>
   <p class="sub" id="runsub">{{runsub}}</p>
   <div class="grid g3" id="kpis">{{kpis}}</div>
@@ -132,14 +133,20 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
     <div class="card scroll"><table id="final">{{final}}</table></div>
     <div class="card"><b>Checks the conductor made during the run</b><ul id="checks" style="padding-left:1.1em;margin:.4em 0 0">{{checks}}</ul></div>
   </div>
+  <h3 id="state">State changes: who held the tUSD8, block by block</h3>
+  <p class="sub">Read from the chain right after each transaction named, at its block: anyone can re-read <code>balanceOf</code> at that block and compare.</p>
+  <div class="card scroll"><table id="states">{{states}}</table></div>
+  <h3>Gas, step by step</h3>
+  <p class="sub" id="gasNote">{{gasNote}}</p>
+  <div class="card scroll"><table id="gasSteps">{{gasSteps}}</table></div>
   <h3>The contracts</h3>
   <div class="card scroll"><table id="contracts">{{contracts}}</table></div>
 </section>
 
 <section id="browser">
-  <h2>Run it in your browser: the real compiled contracts</h2>
-  <p class="sub">This is the proof you can check yourself, today, with nothing but this page. It loads an in-browser Shanghai EVM (ethereumjs, the reference JavaScript implementation), deploys the six contracts from the exact bytecode in <code>artifacts/</code> (the bytes CI recompiles from source on every push, and the bytes that go to Aevum), and runs the same <code>lib/flow.mjs</code> that runs on Aevum: identities, the job, both attacks, the verdicts, the release and the refund. It takes about ten seconds.</p>
-  <div class="btns"><button class="btn" id="runBtn" type="button">Run the whole flow here</button></div>
+  <h2>Offline fallback <span class="pill warn">SIMULATED · not the testnet</span></h2>
+  <p class="sub">Nothing here touches Aevum, and nothing here is on-chain activity. It is for checking the logic offline: it loads an in-browser Shanghai EVM (ethereumjs, the reference JavaScript implementation), deploys the six contracts from the exact bytecode in <code>artifacts/</code> (the bytes CI recompiles from source on every push, and the bytes that go to Aevum), and runs the same <code>lib/flow.mjs</code> that runs on Aevum: identities, the job, both attacks, the verdicts, the release and the refund. It takes about ten seconds.</p>
+  <div class="btns"><button class="btn ghost" id="runBtn" type="button">Run the SIMULATED flow in this page</button></div>
   <div class="log" id="runLog" aria-live="polite">Press the button. Each line is a transaction on the in-page chain.</div>
   <p id="runResult"></p>
 </section>
@@ -287,14 +294,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
   </div>
 
   <h3>Today, against the trust layer</h3>
-  <div class="card scroll"><table>
-    <tr><th></th><th>Today: agents with a card or an API key</th><th>With the trust layer</th></tr>
-    <tr><td>Who checks the work</td><td>a person, when they have time, or nobody</td><td>the verifier on every job; the chain re-checks the quote</td></tr>
-    <tr><td>A prompt injection says "pay X"</td><td>the agent's key can pay X</td><td>refused on-chain: X is not on the allowlist, and the cap holds</td></tr>
-    <tr><td>Ungrounded work</td><td>paid, then disputed</td><td>never released; FAIL refunds the buyer</td></tr>
-    <tr><td>Audit</td><td>logs you keep yourself</td><td>a public transaction per step, re-checkable by anyone</td></tr>
-    <tr><td>Licence</td><td>per seat or per transaction</td><td>MIT: no licence fee; you run the contracts</td></tr>
-  </table></div>
+  <div class="card scroll"><table id="compare">{{compare}}</table></div>
 
   <div class="grid g2" style="margin-top:14px">
     <div class="card"><h3>Security, compliance, data</h3>
@@ -328,7 +328,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
     <tr><th>Criterion</th><th>Where it is met</th></tr>
     <tr><td>UX</td><td>this page: one-click in-browser run, live verifier, plain-language steps; the CLI prints every step</td></tr>
     <tr><td>A clear demo with explorer links</td><td id="critDemo">{{critDemo}}</td></tr>
-    <tr><td>Docs</td><td><a href="https://github.com/sjgant80-hub/kar-trust-layer#readme">README</a>, <a href="#blueprint">architecture</a>, <a href="#docs">addresses, env vars, repro, Docker</a></td></tr>
+    <tr><td>Docs</td><td><a href="https://github.com/sjgant80-hub/kar-paid-on-proof#readme">README</a>, <a href="#blueprint">architecture</a>, <a href="#docs">addresses, env vars, repro, Docker</a></td></tr>
     <tr><td>Innovation</td><td>fulfilment-gated settlement: the chain itself re-checks that the paid answer is made of the sources' own words</td></tr>
     <tr><td>Technical</td><td>ERC-8004 identity + validation, a smart account with session keys (cap, expiry, allowlist), ERC-1271 wallet binding, Shanghai-clean build</td></tr>
     <tr><td>Utility</td><td>any firm whose agents buy document work: research, compliance answers, support replies</td></tr>
@@ -357,7 +357,7 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
     <tr><td class="verdictcell"><span class="pill bad">FAIL</span></td><td>C7</td><td>memory reuse</td></tr>
   </table></div>
   <p>Those are DocDec's benchmark results, published on <a href="https://sjgant80-hub.github.io/docdecdemo/">the DocDec demo</a>; this build does not re-claim them. The three failures stay on the record as measured. Here, the worker is a copy-only reader and the verifier applies the verbatim and on-question rule.</p>
-  <div class="limits"><b>What this proves, and what it does not.</b> It proves the paid answer's words sit at their cited byte offsets in the sources the buyer committed to, and that the named verifier signed off. It does not prove the answer is the best one, that the sources are true, or that the worker understood them. Offsets are UTF-8 bytes. At release, the cited sources go on-chain as calldata. The explorer's contract verifier is not working yet, so the exact bytecode is published in <code>artifacts/</code> for anyone to recompile and compare.</div>
+  <div class="limits"><b>What this proves, and what it does not.</b> It proves the paid answer's words sit at their cited byte offsets in the sources the buyer committed to, and that the named verifier signed off. It does not prove the answer is the best one, that the sources are true, or that the worker understood them. Offsets are UTF-8 bytes. The verifier's on-question judgement (does the copied text answer the question?) is signed and attributable, but it is not re-run on-chain; only the verbatim rule is. At release, the cited sources go on-chain as calldata, so confidential sources need a permissioned deployment. {{explorerNote}}</div>
 </section>
 
 <section id="docs">
@@ -371,19 +371,20 @@ node flow.mjs --network local</pre><p>Or <code>docker run</code>, or on Aevum wi
 export KAR_WORKER_KEY=0x&lt;your TEST key&gt;      # gets gas from the principal
 export KAR_VALIDATOR_KEY=0x&lt;your TEST key&gt;   # gets gas from the principal
 export KAR_SESSION_KEY=0x&lt;your TEST key&gt;     # only signs
-node flow.mjs --network aevum  # writes runs/aevum.json</pre><p class="meta">Test keys only. The CLI refuses the public local keys on a real network and never prints a key.</p></div>
-    <div class="card"><h3>Docker</h3><pre>docker build -t kar-trust-layer .
-docker run --rm kar-trust-layer
-docker run --rm --env-file .env.aevum kar-trust-layer --network aevum</pre></div>
+node tools/aevum-go.mjs        # funds check, flow, receipts re-read, record + page rebuilt
+# or just the flow: node flow.mjs --network aevum  (writes runs/aevum.json)</pre><p class="meta">Test keys only. The CLI refuses the public local keys on a real network and never prints a key.</p></div>
+    <div class="card"><h3>Docker</h3><pre>docker build -t kar-paid-on-proof .
+docker run --rm kar-paid-on-proof
+docker run --rm --env-file .env.aevum kar-paid-on-proof --network aevum</pre></div>
     <div class="card"><h3>The SDK</h3><pre>import { verifyDeliverable, readAnswer,
   sessionActionTypedData, sourcesRoot,
-  deliverableHash } from 'kar-trust-layer';</pre><p class="meta">Install from the repo: <code>npm i github:sjgant80-hub/kar-trust-layer</code>. Hashes match the contracts byte for byte.</p></div>
+  deliverableHash } from 'kar-paid-on-proof';</pre><p class="meta">Install from the repo: <code>npm i github:sjgant80-hub/kar-paid-on-proof</code>. Hashes match the contracts byte for byte.</p></div>
   </div>
 </section>
 </main>
 
 <footer><div class="wrap">
-  Built by Kar for <a href="https://www.ai-nativesolutions.com">AI Native Solutions</a>, for the Aevum Builder Challenge #1 (QDay). Test tokens only: tUSD8 and tQDAY have no monetary value. MIT. <a href="https://github.com/sjgant80-hub/kar-trust-layer">Source</a> · <a href="https://github.com/sjgant80-hub/kar-trust-layer/blob/main/CLAIMS.md">Pre-registered claims</a>.<br>Powered by the Konomi architecture, created by Thomas Frumkin.
+  Built by Kar for <a href="https://www.ai-nativesolutions.com">AI Native Solutions</a>, for the Aevum Builder Challenge #1 (QDay). Test tokens only: tUSD8 and tQDAY have no monetary value. MIT. <a href="https://github.com/sjgant80-hub/kar-paid-on-proof">Source</a> · <a href="https://github.com/sjgant80-hub/kar-paid-on-proof/blob/main/CLAIMS.md">Pre-registered claims</a>.<br>Powered by the Konomi architecture, created by Thomas Frumkin.
 </div></footer>
 
 <script type="module">
@@ -477,10 +478,8 @@ function costNow() {
 // ── run it in the browser ────────────────────────────────────────────────────
 async function runHere() {
   const btn = $('runBtn');
-  const hero = $('heroRunBtn');
   if (btn.disabled) return;
   btn.disabled = true;
-  hero.disabled = true;
   const log = $('runLog');
   log.textContent = 'Loading the in-browser EVM and the six contracts…\n';
   $('runResult').textContent = '';
@@ -492,19 +491,14 @@ async function runHere() {
     const trail = await mod.runInBrowser({ art, job: JOB, onLog: (l) => { log.textContent += l + '\n'; log.scrollTop = log.scrollHeight; } });
     const ok = trail.checks.filter((c) => c.ok).length;
     const refused = trail.steps.filter((s) => s.status === 'reverted').map((s) => s.error.name).join(', ');
-    $('runResult').innerHTML = `<span class="pill ${ok === trail.checks.length ? 'ok' : 'bad'}">done</span> ${trail.steps.length} transactions in ${((performance.now() - t0) / 1000).toFixed(1)} s on the in-page chain; ${ok}/${trail.checks.length} checks passed; refused on-chain: ${esc(refused)}; attacker received ${esc(trail.final.balances.attacker)}.`;
+    $('runResult').innerHTML = `<span class="pill warn">SIMULATED</span> <span class="pill ${ok === trail.checks.length ? 'ok' : 'bad'}">done</span> ${trail.steps.length} transactions (not on the testnet) in ${((performance.now() - t0) / 1000).toFixed(1)} s on the in-page chain; ${ok}/${trail.checks.length} checks passed; refused on-chain: ${esc(refused)}; attacker received ${esc(trail.final.balances.attacker)}.`;
   } catch (e) {
     $('runResult').innerHTML = `<span class="pill bad">failed</span> ${esc(e.message)}. The recorded run above is unaffected; reload and try again, or run it yourself with <code>node flow.mjs --network local</code>.`;
   } finally {
     btn.disabled = false;
-    hero.disabled = false;
   }
 }
 $('runBtn').addEventListener('click', runHere);
-$('heroRunBtn').addEventListener('click', () => {
-  $('browser').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  runHere();
-});
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
